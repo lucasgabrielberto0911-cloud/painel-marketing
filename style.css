@@ -659,6 +659,11 @@ body {
 .kanban-column.highlighted {
     border-color: rgba(220,38,38,.15);
 }
+.kanban-column.drag-over {
+    border-color: var(--primary) !important;
+    background: rgba(220, 38, 38, 0.04) !important;
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.1) !important;
+}
 
 .column-header {
     display: flex; justify-content: space-between; align-items: center;
