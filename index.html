@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sua Garagem Marketing - Linhares & Vitória</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i data-lucide="car"></i>
+                </div>
+                <h2>Sua Garagem</h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#overview" class="nav-item active" id="nav-overview" onclick="switchTab('overview')">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Painel Geral</span>
+                </a>
+                <a href="#simulator" class="nav-item" id="nav-simulator" onclick="switchTab('simulator')">
+                    <i data-lucide="sliders"></i>
+                    <span>Simulador de Verba</span>
+                </a>
+                <a href="#olx-manager" class="nav-item" id="nav-olx-manager" onclick="switchTab('olx-manager')">
+                    <i data-lucide="layers"></i>
+                    <span>Plano OLX (10 Carros)</span>
+                </a>
+                <a href="#campaign-tracker" class="nav-item" id="nav-campaign-tracker" onclick="switchTab('campaign-tracker')">
+                    <i data-lucide="trending-up"></i>
+                    <span>Rastrear Campanhas</span>
+                </a>
+                <a href="#integrations" class="nav-item" id="nav-integrations" onclick="switchTab('integrations')">
+                    <i data-lucide="link"></i>
+                    <span>Integrações & API</span>
+                </a>
+                <a href="#local-insights" class="nav-item" id="nav-local-insights" onclick="switchTab('local-insights')">
+                    <i data-lucide="map-pin"></i>
+                    <span>Insights Regionais</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="location-badge">
+                    <i data-lucide="navigation"></i>
+                    <div>
+                        <p class="loc-title">Operação ES</p>
+                        <p class="loc-sub">Linhares & Vitória</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h1 id="main-title">Visão Geral do Marketing</h1>
+                    <p>Gerencie seus investimentos na OLX, Facebook e Instagram</p>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="region-selector">
+                        <i data-lucide="globe"></i>
+                        <select id="regionFilter" onchange="updateRegionDashboard()">
+                            <option value="all">Vitória & Linhares (Geral)</option>
+                            <option value="vitoria">Grande Vitória</option>
+                            <option value="linhares">Linhares & Região Norte</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="openAddCarModal()">
+                        <i data-lucide="plus"></i>
+                        <span>Adicionar Carro</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Tab Content: Overview -->
+            <section id="tab-overview" class="tab-content active">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper blue">
+                            <i data-lucide="dollar-sign"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Orçamento Mensal</h3>
+                            <p class="stat-value" id="stat-budget">R$ 2.000,00</p>
+                            <span class="stat-change negative">
+                                <i data-lucide="arrow-right"></i> OLX Fixo + Tráfego Pago
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper green">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Leads Estimados</h3>
+                            <p class="stat-value" id="stat-leads">124</p>
+                            <span class="stat-change positive">
+                                <i data-lucide="trending-up"></i> Estimado por mês
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper purple">
+                            <i data-lucide="target"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Custo Médio / Lead</h3>
+                            <p class="stat-value" id="stat-cpl">R$ 16,13</p>
+                            <span class="stat-change neutral">
+                                <i data-lucide="activity"></i> Média da região
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper orange">
+                            <i data-lucide="percent"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Preenchimento OLX</h3>
+                            <p class="stat-value" id="stat-olx-fill">0/10</p>
+                            <span class="stat-change" id="stat-olx-badge">
+                                Carros no plano ativo
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Overview Widgets -->
+                <div class="dashboard-grid">
+                    <!-- Column 1: Channel Distribution -->
+                    <div class="dashboard-card glass">
+                        <div class="card-header">
+                            <h2>Distribuição Recomendada</h2>
+                            <i data-lucide="pie-chart" class="text-muted"></i>
+                        </div>
+                        <div class="card-body">
+                            <div class="budget-chart-container">
+                                <!-- Visual Representation using HTML/CSS Bars -->
+                                <div class="distribution-bars">
+                                    <div class="dist-bar-item">
+                                        <div class="dist-header">
+                                            <span class="dist-label"><i data-lucide="shopping-bag" class="channel-icon olx"></i> OLX (Fixo)</span>
+                                            <span class="dist-val" id="dist-val-olx">R$ 400 (20%)</span>
+                                        </div>
+                                        <div class="progress-bg"><div class="progress-fill olx" id="pb-olx" style="width: 20%"></div></div>
+                                    </div>
+                                    <div class="dist-bar-item">
+                                        <div class="dist-header">
+                                            <span class="dist-label"><i data-lucide="facebook" class="channel-icon facebook"></i> Facebook Marketplace</span>
+                                            <span class="dist-val" id="dist-val-fb">R$ 600 (30%)</span>
+                                        </div>
+                                        <div class="progress-bg"><div class="progress-fill facebook" id="pb-fb" style="width: 30%"></div></div>
+                                    </div>
+                                    <div class="dist-bar-item">
+                                        <div class="dist-header">
+                                            <span class="dist-label"><i data-lucide="instagram" class="channel-icon instagram"></i> Instagram (Meta Ads)</span>
+                                            <span class="dist-val" id="dist-val-ig">R$ 1.000 (50%)</span>
+                                        </div>
+                                        <div class="progress-bg"><div class="progress-fill instagram" id="pb-ig" style="width: 50%"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="overview-tips mt-4">
+                                <div class="tip-box">
+                                    <i data-lucide="lightbulb" class="text-warning"></i>
+                                    <div class="tip-content">
+                                        <p id="tip-text"><strong>Dica de Vitória:</strong> A Grande Vitória possui público altamente conectado no Instagram. Reels bem produzidos de SUVs e Hatchback geram muitas mensagens no direct.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: OLX Slots Status -->
+                    <div class="dashboard-card glass">
+                        <div class="card-header">
+                            <h2>Status dos Slots OLX</h2>
+                            <span class="badge" id="olx-slots-count">0 de 10 Usados</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="olx-status-container">
+                                <div class="olx-grid-slots" id="olx-overview-slots">
+                                    <!-- Dynamic Slots -->
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button class="btn btn-outline btn-sm btn-block" onclick="switchTab('olx-manager')">
+                                        Gerenciar Plano OLX <i data-lucide="chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Simulator -->
+            <section id="tab-simulator" class="tab-content">
+                <div class="dashboard-card glass max-width-card">
+                    <div class="card-header">
+                        <div>
+                            <h2>Simulador de Distribuição de Verba</h2>
+                            <p class="card-subtitle">Ajuste o orçamento total e veja a estimativa baseada nas praças de Linhares e Vitória</p>
+                        </div>
+                        <i data-lucide="sliders" class="text-muted"></i>
+                    </div>
+                    <div class="card-body">
+                        <!-- Budget Inputs -->
+                        <div class="simulator-controls">
+                            <div class="control-group">
+                                <label for="totalBudgetRange">Orçamento Mensal Total: <span class="highlight-text" id="budgetRangeValue">R$ 2.000</span></label>
+                                <input type="range" id="totalBudgetRange" min="800" max="10000" step="100" value="2000" class="slider" oninput="calculateBudgetSimulation()">
+                            </div>
+                            
+                            <div class="split-controls">
+                                <div class="control-item">
+                                    <label><i data-lucide="shopping-bag"></i> Plano OLX (Fixo/Mês)</label>
+                                    <div class="input-with-currency">
+                                        <span>R$</span>
+                                        <input type="number" id="sim-olx" value="400" min="300" max="1000" oninput="calculateBudgetSimulation(true)">
+                                    </div>
+                                    <p class="field-info">Plano mensal fixo (10 carros)</p>
+                                </div>
+                                
+                                <div class="control-item">
+                                    <label><i data-lucide="facebook"></i> Meta Ads (FB Marketplace)</label>
+                                    <div class="input-with-currency">
+                                        <span>R$</span>
+                                        <input type="number" id="sim-fb" value="600" oninput="calculateBudgetSimulation(true)">
+                                    </div>
+                                    <p class="field-info">Campanha focada em catálogo e mensagens</p>
+                                </div>
+
+                                <div class="control-item">
+                                    <label><i data-lucide="instagram"></i> Meta Ads (Instagram)</label>
+                                    <div class="input-with-currency">
+                                        <span>R$</span>
+                                        <input type="number" id="sim-ig" value="1000" oninput="calculateBudgetSimulation(true)">
+                                    </div>
+                                    <p class="field-info">Campanha de Reels e Captação de Leads</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Projection Results -->
+                        <div class="projection-results-container mt-5">
+                            <h3>Projeção de Performance Estimada (Mensal)</h3>
+                            <div class="projection-grid">
+                                <div class="proj-card">
+                                    <div class="proj-channel olx">OLX</div>
+                                    <div class="proj-stat">
+                                        <span class="label">Leads Estimados</span>
+                                        <span class="val" id="proj-olx-leads">20</span>
+                                    </div>
+                                    <div class="proj-stat">
+                                        <span class="label">Custo por Lead</span>
+                                        <span class="val" id="proj-olx-cpl">R$ 20,00</span>
+                                    </div>
+                                    <div class="proj-meta">
+                                        <span class="status-indicator online"></span> Alta Intenção (Fundo de Funil)
+                                    </div>
+                                </div>
+
+                                <div class="proj-card">
+                                    <div class="proj-channel facebook">Facebook Marketplace</div>
+                                    <div class="proj-stat">
+                                        <span class="label">Leads Estimados</span>
+                                        <span class="val" id="proj-fb-leads">40</span>
+                                    </div>
+                                    <div class="proj-stat">
+                                        <span class="label">Custo por Lead</span>
+                                        <span class="val" id="proj-fb-cpl">R$ 15,00</span>
+                                    </div>
+                                    <div class="proj-meta">
+                                        <span class="status-indicator online"></span> Grande volume orgânico + pago
+                                    </div>
+                                </div>
+
+                                <div class="proj-card">
+                                    <div class="proj-channel instagram">Instagram</div>
+                                    <div class="proj-stat">
+                                        <span class="label">Leads Estimados</span>
+                                        <span class="val" id="proj-ig-leads">64</span>
+                                    </div>
+                                    <div class="proj-stat">
+                                        <span class="label">Custo por Lead</span>
+                                        <span class="val" id="proj-ig-cpl">R$ 15,62</span>
+                                    </div>
+                                    <div class="proj-meta">
+                                        <span class="status-indicator online"></span> Excelente para Branding + Whatsapp
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: OLX Inventory Manager (10 Cars) -->
+            <section id="tab-olx-manager" class="tab-content">
+                <div class="olx-limits-banner alert-warning" id="olx-limit-alert" style="display: none;">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <h4>Atenção: Limite do Plano OLX Excedido!</h4>
+                        <p>Você tem mais de 10 carros com o status "Ativo na OLX". O seu plano contratado suporta no máximo 10 anúncios simultâneos. Remova algum carro para evitar cobranças adicionais ou anúncios pausados.</p>
+                    </div>
+                </div>
+
+                <div class="kanban-board">
+                    <!-- Column 1: Fila de Espera (Estoque Geral) -->
+                    <div class="kanban-column" id="col-stock">
+                        <div class="column-header">
+                            <h3>Estoque Geral (Fila)</h3>
+                            <span class="count-badge" id="count-stock">0</span>
+                        </div>
+                        <div class="column-cards" id="cards-stock" ondragover="allowDrop(event)" ondrop="drop(event, 'stock')">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Ativos no Plano OLX (Máx 10) -->
+                    <div class="kanban-column highlighted" id="col-active">
+                        <div class="column-header">
+                            <h3>Ativos no Plano OLX</h3>
+                            <span class="count-badge active-plan" id="count-active">0 / 10</span>
+                        </div>
+                        <div class="column-cards" id="cards-active" ondragover="allowDrop(event)" ondrop="drop(event, 'active')">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Vendidos (Histórico) -->
+                    <div class="kanban-column" id="col-sold">
+                        <div class="column-header">
+                            <h3>Vendidos</h3>
+                            <span class="count-badge sold-plan" id="count-sold">0</span>
+                        </div>
+                        <div class="column-cards" id="cards-sold" ondragover="allowDrop(event)" ondrop="drop(event, 'sold')">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Campaign Tracker -->
+            <section id="tab-campaign-tracker" class="tab-content">
+                <div class="dashboard-grid-1-2">
+                    <!-- Form side -->
+                    <div class="dashboard-card glass">
+                        <div class="card-header">
+                            <h2>Registrar Resultados</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="campaignForm" onsubmit="saveCampaign(event)">
+                                <div class="form-group">
+                                    <label for="camp-date">Data de Início</label>
+                                    <input type="date" id="camp-date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="camp-channel">Canal do Anúncio</label>
+                                    <select id="camp-channel" required>
+                                        <option value="OLX">OLX</option>
+                                        <option value="Facebook Marketplace">Facebook Marketplace</option>
+                                        <option value="Instagram Ads">Instagram Ads</option>
+                                        <option value="Google Ads">Google Ads</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="camp-spent">Valor Gasto (R$)</label>
+                                    <input type="number" id="camp-spent" step="0.01" min="0" required placeholder="0,00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="camp-leads">Leads Gerados (Contatos)</label>
+                                    <input type="number" id="camp-leads" min="0" required placeholder="Ex: 15">
+                                </div>
+                                <div class="form-group">
+                                    <label for="camp-sales">Vendas Fechadas</label>
+                                    <input type="number" id="camp-sales" min="0" required placeholder="Ex: 2">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Salvar Registro</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- History Side -->
+                    <div class="dashboard-card glass">
+                        <div class="card-header">
+                            <h2>Histórico de Desempenho Real</h2>
+                            <button class="btn btn-outline btn-sm" onclick="clearCampaignHistory()">Limpar Histórico</button>
+                        </div>
+                        <div class="card-body overflow-x">
+                            <table class="table" id="campaignTable">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Canal</th>
+                                        <th>Gasto</th>
+                                        <th>Leads</th>
+                                        <th>CPL</th>
+                                        <th>Vendas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="campaignTableBody">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Regional Insights -->
+            <section id="tab-local-insights" class="tab-content">
+                <div class="insights-container">
+                    <div class="insight-row">
+                        <div class="insight-side-card lin">
+                            <div class="icon-header">
+                                <i data-lucide="map-pin"></i>
+                                <h2>Linhares e Região Norte</h2>
+                            </div>
+                            <div class="insight-content">
+                                <p><strong>Perfil do Público:</strong> Comércio local forte, produtores rurais, e profissionais ligados à agroindústria.</p>
+                                <ul>
+                                    <li><i data-lucide="check-circle" class="text-success"></i> <strong>Tipos de Carro:</strong> Pickups (Hilux, S10, Strada, Toro) e carros populares robustos têm giro rápido.</li>
+                                    <li><i data-lucide="check-circle" class="text-success"></i> <strong>Canal Principal:</strong> OLX é extremamente forte para utilitários e negócios na região de Linhares e Sooretama.</li>
+                                    <li><i data-lucide="navigation-2" class="text-info"></i> <strong>Dica de Anúncio:</strong> Destaque a resistência do veículo, espaço de carga e condições de financiamento para produtor rural.</li>
+                                    <li><i data-lucide="target" class="text-warning"></i> <strong>Segmentação Meta:</strong> Raio de 40km em torno de Linhares, incluindo Sooretama e Rio Bananal.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="insight-side-card vit">
+                            <div class="icon-header">
+                                <i data-lucide="map-pin"></i>
+                                <h2>Grande Vitória (Vitória/Vila Velha/Serra/Cariacica)</h2>
+                            </div>
+                            <div class="insight-content">
+                                <p><strong>Perfil do Público:</strong> Urbano, profissionais liberais, jovens famílias e motoristas de aplicativo.</p>
+                                <ul>
+                                    <li><i data-lucide="check-circle" class="text-success"></i> <strong>Tipos de Carro:</strong> SUVs compactos (Jeep Renegade, Hyundai Creta, Tracker) e Hatchbacks modernos (Onix, HB20, Argo) com foco em economia de combustível.</li>
+                                    <li><i data-lucide="check-circle" class="text-success"></i> <strong>Canal Principal:</strong> Instagram (com campanhas de Reels e depoimentos de clientes) e Facebook Marketplace.</li>
+                                    <li><i data-lucide="navigation-2" class="text-info"></i> <strong>Dica de Anúncio:</strong> Foco em tecnologia (multimídia, Apple CarPlay), IPVA pago, e aprovação de crédito simplificada.</li>
+                                    <li><i data-lucide="target" class="text-warning"></i> <strong>Segmentação Meta:</strong> Raio de 30km centrado em Vitória (pega Serra, Vila Velha, Cariacica).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Integrations & API -->
+            <section id="tab-integrations" class="tab-content">
+                <div class="dashboard-grid">
+                    <!-- Column 1: Integrations List -->
+                    <div class="dashboard-card glass">
+                        <div class="card-header">
+                            <h2>Conectar Fontes de Dados</h2>
+                            <span class="badge">Integrações API</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="distribution-bars">
+                                <!-- Meta Ads Integration Card -->
+                                <div class="control-item">
+                                    <label><i data-lucide="facebook" class="text-info" style="color: var(--fb-color) !important;"></i> Meta Graph API (Instagram & FB)</label>
+                                    <p class="field-info">Obtenha métricas de anúncios e leads gerados diretamente em tempo real.</p>
+                                    <div class="form-group mt-2">
+                                        <input type="text" id="meta-token" placeholder="Insira o Access Token do Meta Ads..." class="input-with-currency">
+                                    </div>
+                                    <div class="flex-row align-center justify-between mt-2" style="display: flex; justify-content: space-between;">
+                                        <span class="badge" id="badge-meta" style="background: rgba(229, 9, 20, 0.1); border-color: rgba(229, 9, 20, 0.2); color: var(--primary);">Desconectado</span>
+                                        <button class="btn btn-primary btn-sm" id="btn-connect-meta" onclick="connectMockAPI('meta')">Conectar Conta</button>
+                                    </div>
+                                </div>
+
+                                <!-- Google Sheets Integration Card -->
+                                <div class="control-item mt-3">
+                                    <label><i data-lucide="file-spreadsheet" class="text-success" style="color: var(--success) !important;"></i> Google Sheets (Planilhas)</label>
+                                    <p class="field-info">Envie leads e gerencie o estoque usando uma planilha compartilhada.</p>
+                                    <div class="form-group mt-2">
+                                        <input type="text" id="sheets-url" placeholder="https://docs.google.com/spreadsheets/d/..." class="input-with-currency">
+                                    </div>
+                                    <div class="flex-row align-center justify-between mt-2" style="display: flex; justify-content: space-between;">
+                                        <span class="badge" id="badge-sheets" style="background: rgba(229, 9, 20, 0.1); border-color: rgba(229, 9, 20, 0.2); color: var(--primary);">Desconectado</span>
+                                        <button class="btn btn-primary btn-sm" id="btn-connect-sheets" onclick="connectMockAPI('sheets')">Integrar Planilha</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: OLX XML Feed Generator -->
+                    <div class="dashboard-card glass">
+                        <div class="card-header">
+                            <h2>Exportar Feed OLX</h2>
+                            <i data-lucide="shopping-bag" class="text-muted"></i>
+                        </div>
+                        <div class="card-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <p class="field-info" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+                                Gere um arquivo de feed padrão XML contendo os 10 carros atualmente ativos na OLX. Copie esta URL e insira no integrador da OLX ou configure sua leitura periódica.
+                            </p>
+                            <div class="input-with-currency mt-2" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                                <input type="text" id="olx-feed-url" readonly value="https://api.automarketing.com.br/feed/olx/linhares-vitoria.xml" style="color: var(--text-secondary); font-size: 0.82rem; width: 80%;">
+                                <button class="btn btn-outline btn-sm" onclick="copyFeedURL()" style="padding: 0.65rem;"><i data-lucide="copy" style="width:16px; height:16px;"></i></button>
+                            </div>
+                            <div class="tip-box mt-3">
+                                <i data-lucide="info" style="color: var(--primary) !important;"></i>
+                                <p>Ao arrastar um carro para a coluna "Ativos no Plano OLX" no Kanban, este feed é atualizado automaticamente em tempo real.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add/Edit Car Modal -->
+    <div class="modal-overlay" id="carModal">
+        <div class="modal-card glass">
+            <div class="modal-header">
+                <h2 id="modalTitle">Adicionar Carro ao Estoque</h2>
+                <button class="btn-close" onclick="closeCarModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="carForm" onsubmit="handleCarFormSubmit(event)">
+                    <input type="hidden" id="carIndex">
+                    <div class="form-group">
+                        <label for="car-model">Modelo / Versão</label>
+                        <input type="text" id="car-model" required placeholder="Ex: Chevrolet Onix 1.0 Turbo LTZ">
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="car-year">Ano</label>
+                            <input type="text" id="car-year" required placeholder="Ex: 2021/2022">
+                        </div>
+                        <div class="form-group">
+                            <label for="car-price">Preço (R$)</label>
+                            <input type="number" id="car-price" required placeholder="Ex: 75000">
+                        </div>
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="car-km">Quilometragem (KM)</label>
+                            <input type="number" id="car-km" required placeholder="Ex: 45000">
+                        </div>
+                        <div class="form-group">
+                            <label for="car-status">Status Inicial</label>
+                            <select id="car-status">
+                                <option value="stock">Fila de Espera (Estoque)</option>
+                                <option value="active">Ativo na OLX (Plano 10 Carros)</option>
+                                <option value="sold">Vendido</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="car-image">Imagem do Carro</label>
+                        <select id="car-image" onchange="previewSelectedImage()">
+                            <option value="img_suv">SUV Moderno (Exemplo)</option>
+                            <option value="img_sedan">Sedã Elegante (Exemplo)</option>
+                            <option value="img_hatch">Hatch Econômico (Exemplo)</option>
+                            <option value="img_pickup">Pickup Robusta (Exemplo)</option>
+                        </select>
+                        <div class="img-preview-box mt-2">
+                            <img id="car-img-preview" src="" alt="Preview" style="display:none; max-height: 120px; border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="form-group flex-row align-center">
+                        <input type="checkbox" id="car-hot" class="checkbox-input">
+                        <label for="car-hot" class="checkbox-label">Destaque de Giro Rápido (Prioridade de Tráfego Pago)</label>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeCarModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Carro</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
