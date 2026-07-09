@@ -44,6 +44,10 @@
                     <i data-lucide="trending-up"></i>
                     <span>Rastrear Campanhas</span>
                 </a>
+                <a href="#meta-ads" class="nav-item" id="nav-meta-ads" onclick="switchTab('meta-ads')">
+                    <i data-lucide="facebook"></i>
+                    <span>Meta Ads (Real)</span>
+                </a>
                 <a href="#integrations" class="nav-item" id="nav-integrations" onclick="switchTab('integrations')">
                     <i data-lucide="link"></i>
                     <span>Integrações & API</span>
@@ -586,6 +590,57 @@
                                     </tr>
                                 </thead>
                                 <tbody id="campaignTableBody">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Meta Ads Real-Time -->
+            <section id="tab-meta-ads" class="tab-content">
+                <div class="dashboard-card glass">
+                    <div class="card-header">
+                        <div>
+                            <h2>Campanhas Meta Ads (Real-Time)</h2>
+                            <p class="card-subtitle">Campanhas sincronizadas em tempo real com o Facebook Ads Manager</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="btn-sync-meta-api" onclick="syncMetaAdsData()">
+                            <i data-lucide="refresh-cw"></i> Atualizar dados do Meta
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Error Box -->
+                        <div id="meta-api-error-box" class="alert-banner negative" style="display: none; margin-bottom: 1.5rem;">
+                            <i data-lucide="alert-triangle"></i>
+                            <span id="meta-api-error-msg">Erro ao conectar com a API do Meta.</span>
+                        </div>
+
+                        <!-- Skeleton Loader -->
+                        <div id="meta-loading-skeleton" class="skeleton-container" style="display: none;">
+                            <div class="skeleton-row" style="height: 40px; margin-bottom: 12px; background: rgba(255,255,255,0.03); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+                            <div class="skeleton-row" style="height: 50px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+                            <div class="skeleton-row" style="height: 50px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+                            <div class="skeleton-row" style="height: 50px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+                        </div>
+
+                        <!-- Content Table -->
+                        <div id="meta-table-wrapper" class="overflow-x">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome da Campanha</th>
+                                        <th>Status</th>
+                                        <th>Objetivo</th>
+                                        <th>Orçamento Diário</th>
+                                        <th>Gasto (30d)</th>
+                                        <th>Impressões</th>
+                                        <th>Cliques</th>
+                                        <th>CTR</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="metaCampaignTableBody">
                                     <!-- Dynamic content -->
                                 </tbody>
                             </table>

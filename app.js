@@ -305,11 +305,17 @@ function switchTab(tabId) {
         simulator: "Simulador de Verba",
         "olx-manager": "Gerenciador do Plano OLX",
         "olx-rotation": "Painel de Rotação OLX",
+        "meta-ads": "Campanhas Meta Ads (Real-Time)",
         "campaign-tracker": "Rastreamento de Performance Real",
         integrations: "Conexões de API & Planilhas",
         "local-insights": "Insights de Mercado Regional (ES)"
     };
     document.getElementById("main-title").innerText = titles[tabId] || "Sua Garagem Marketing";
+
+    // Auto-fetch Meta Ads data on entering the tab
+    if (tabId === 'meta-ads') {
+        syncMetaAdsData(true);
+    }
 }
 
 // Switch Region and Recalculate
@@ -1101,6 +1107,135 @@ function clearCampaignHistory() {
     }
 }
 
+// Fetch and display real Meta Ads API data
+function syncMetaAdsData(silent = false) {
+    const errorBox = document.getElementById("meta-api-error-box");
+    const loadingSkeleton = document.getElementById("meta-loading-skeleton");
+    const tableWrapper = document.getElementById("meta-table-wrapper");
+    const syncBtn = document.getElementById("btn-sync-meta-api");
+
+    if (errorBox) errorBox.style.display = "none";
+    
+    if (!silent) {
+        if (loadingSkeleton) loadingSkeleton.style.display = "block";
+        if (tableWrapper) tableWrapper.style.display = "none";
+    } else {
+        // Silent loader if skeleton not yet shown
+        if (loadingSkeleton && loadingSkeleton.style.display !== "block" && tableWrapper.style.display === "none") {
+            loadingSkeleton.style.display = "block";
+        }
+    }
+
+    if (syncBtn) {
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = `<i data-lucide="refresh-cw" class="animate-spin"></i> Sincronizando...`;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    Promise.all([
+        fetch('/api/meta-campaigns').then(res => res.json()),
+        fetch('/api/meta-insights').then(res => res.json())
+    ])
+    .then(([resCamp, resIns]) => {
+        if (!resCamp.success) {
+            throw new Error(resCamp.error || "Falha ao obter campanhas do Meta Ads.");
+        }
+        if (!resIns.success) {
+            throw new Error(resIns.error || "Falha ao obter dados de insights do Meta Ads.");
+        }
+
+        renderMetaAdsTable(resCamp.data, resIns.data);
+
+        if (loadingSkeleton) loadingSkeleton.style.display = "none";
+        if (tableWrapper) tableWrapper.style.display = "block";
+    })
+    .catch(err => {
+        console.error("Erro na integração com Meta API:", err);
+        if (errorBox) {
+            const errorMsg = document.getElementById("meta-api-error-msg");
+            if (errorMsg) errorMsg.innerText = err.message || "Erro na conexão com a API do Meta Ads.";
+            errorBox.style.display = "flex";
+        }
+        if (loadingSkeleton) loadingSkeleton.style.display = "none";
+        if (tableWrapper) tableWrapper.style.display = "none";
+    })
+    .finally(() => {
+        if (syncBtn) {
+            syncBtn.disabled = false;
+            syncBtn.innerHTML = `<i data-lucide="refresh-cw"></i> Atualizar dados do Meta`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    });
+}
+
+// Render dynamic campaign rows in Meta API view
+function renderMetaAdsTable(campaigns, insights) {
+    const tbody = document.getElementById("metaCampaignTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (!campaigns || campaigns.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma campanha ativa encontrada na conta de anúncios do Meta.</td></tr>`;
+        return;
+    }
+
+    campaigns.forEach(camp => {
+        // Status mapping
+        const statusRaw = (camp.status || "").toUpperCase().trim();
+        let statusText = "Pausada";
+        let statusBadgeClass = "style='color: var(--text-muted) !important; background: rgba(255, 255, 255, 0.03) !important; border-color: var(--border-color) !important;'";
+        
+        if (statusRaw === 'ACTIVE') {
+            statusText = "Ativa";
+            statusBadgeClass = "style='color: var(--success) !important; background: var(--success-bg) !important; border-color: rgba(22, 163, 74, 0.2) !important;'";
+        }
+
+        // Daily budget formatting
+        let budgetText = "—";
+        if (camp.daily_budget) {
+            const budgetVal = parseFloat(camp.daily_budget) / 100; // Meta values are in cents
+            budgetText = budgetVal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        // Search in insights (cross reference by name matching)
+        const matched = insights.find(ins => ins.campaign_name === camp.name);
+
+        let spentText = "Sem dados no período";
+        let impressionsText = "—";
+        let clicksText = "—";
+        let ctrText = "—";
+
+        if (matched) {
+            const spent = parseFloat(matched.spend) || 0;
+            spentText = spent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
+            const impressions = parseInt(matched.impressions) || 0;
+            impressionsText = impressions.toLocaleString('pt-BR');
+            
+            const clicks = parseInt(matched.clicks) || 0;
+            clicksText = clicks.toLocaleString('pt-BR');
+
+            if (impressions > 0) {
+                const ctr = (clicks / impressions) * 100;
+                ctrText = `${ctr.toFixed(2)}%`;
+            }
+        }
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><strong>${camp.name}</strong></td>
+            <td><span class="badge" ${statusBadgeClass}>${statusText}</span></td>
+            <td>${camp.objective || "—"}</td>
+            <td>${budgetText}</td>
+            <td>${spentText}</td>
+            <td>${impressionsText}</td>
+            <td>${clicksText}</td>
+            <td><strong>${ctrText}</strong></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
 // Integration Real API System (Google Sheets Live Auth & Read)
 function connectMockAPI(type) {
     if (type === 'meta') {
@@ -1322,3 +1457,10 @@ function downloadXMLFeed() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+
+// Global Move Car helper to easily allow dragging columns
+window.moveCar = function(index, targetStatus) {
+    state.inventory[index].status = targetStatus;
+    saveInventoryToStorage();
+    renderAll();
+};
