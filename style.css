@@ -986,3 +986,14 @@ body {
     .stats-grid { grid-template-columns: 1fr; }
     .form-row-2 { grid-template-columns: 1fr; }
 }
+
+.row-alert {
+    border-left: 3px solid var(--primary) !important;
+    background: rgba(220, 38, 38, 0.03) !important;
+}
+.badge-alert {
+    background: rgba(220, 38, 38, 0.12) !important;
+    color: var(--primary-light) !important;
+    border: 1px solid rgba(220, 38, 38, 0.25) !important;
+}
+

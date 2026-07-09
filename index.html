@@ -36,6 +36,10 @@
                     <i data-lucide="layers"></i>
                     <span>Plano OLX (10 Carros)</span>
                 </a>
+                <a href="#olx-rotation" class="nav-item" id="nav-olx-rotation" onclick="switchTab('olx-rotation')">
+                    <i data-lucide="refresh-cw"></i>
+                    <span>Rotação OLX</span>
+                </a>
                 <a href="#campaign-tracker" class="nav-item" id="nav-campaign-tracker" onclick="switchTab('campaign-tracker')">
                     <i data-lucide="trending-up"></i>
                     <span>Rastrear Campanhas</span>
@@ -393,6 +397,76 @@
                         <div class="column-cards" id="cards-sold">
                             <!-- JS populated -->
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: OLX Rotation -->
+            <section id="tab-olx-rotation" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper orange">
+                            <i data-lucide="dollar-sign"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Custo do Plano OLX</h3>
+                            <p class="stat-value">R$ 978,99</p>
+                            <span class="stat-change">
+                                Plano mensal fixo (10 vagas)
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper blue">
+                            <i data-lucide="layers"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Vagas Ocupadas</h3>
+                            <p class="stat-value" id="rot-stat-vagas">0 / 10</p>
+                            <span class="stat-change" id="rot-stat-vagas-sub">
+                                Vagas ativas no plano
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper green">
+                            <i data-lucide="activity"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Custo Acumulado Total</h3>
+                            <p class="stat-value" id="rot-stat-custo-total">R$ 0,00</p>
+                            <span class="stat-change">
+                                Soma proporcional do tempo ativo
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card glass">
+                    <div class="card-header">
+                        <div>
+                            <h2>Controle de Rotação e Vagas OLX</h2>
+                            <p class="card-subtitle">Monitore há quantos dias os veículos estão anunciados e ordene por prioridade de troca</p>
+                        </div>
+                        <i data-lucide="refresh-cw" class="text-muted"></i>
+                    </div>
+                    <div class="card-body overflow-x">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Veículo</th>
+                                    <th>Data de Anúncio</th>
+                                    <th>Dias na OLX</th>
+                                    <th>Custo Acumulado</th>
+                                    <th>Status / Recomendação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="olxRotationTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>

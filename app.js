@@ -13,11 +13,11 @@ let state = {
 
 // Initial Mock Data
 const INITIAL_CARS = [
-    { id: 1, model: "Jeep Renegade 1.8 Flex Automático", year: "2020/2020", price: 82000, km: 54000, status: "active", image: "img_suv", hot: true },
-    { id: 2, model: "Chevrolet Onix 1.0 Turbo LTZ", year: "2021/2022", price: 74900, km: 38000, status: "active", image: "img_hatch", hot: false },
+    { id: 1, model: "Jeep Renegade 1.8 Flex Automático", year: "2020/2020", price: 82000, km: 54000, status: "active", image: "img_suv", hot: true, data_olx: "2026-06-15", custo_olx: 97.90 },
+    { id: 2, model: "Chevrolet Onix 1.0 Turbo LTZ", year: "2021/2022", price: 74900, km: 38000, status: "active", image: "img_hatch", hot: false, data_olx: "2026-06-28", custo_olx: 97.90 },
     { id: 3, model: "Toyota Hilux 2.8 D-4D Diesel SRX", year: "2019/2019", price: 189000, km: 92000, status: "stock", image: "img_pickup", hot: true },
     { id: 4, model: "Honda Civic 2.0 EXL Automático", year: "2018/2019", price: 98000, km: 71000, status: "stock", image: "img_sedan", hot: false },
-    { id: 5, model: "Hyundai Creta 1.6 Pulse Plus", year: "2021/2021", price: 89900, km: 42000, status: "active", image: "img_suv", hot: false },
+    { id: 5, model: "Hyundai Creta 1.6 Pulse Plus", year: "2021/2021", price: 89900, km: 42000, status: "active", image: "img_suv", hot: false, data_olx: "2026-07-02", custo_olx: 97.90 },
     { id: 6, model: "Fiat Strada 1.3 Firefly Volcano", year: "2022/2023", price: 92000, km: 23000, status: "sold", image: "img_pickup", hot: false }
 ];
 
@@ -153,6 +153,29 @@ function saveCampaignsToStorage() {
     localStorage.setItem("automarketing_campaigns", JSON.stringify(state.campaigns));
 }
 
+// Calculate days on OLX
+function calcularDiasNaOlx(dataOlx) {
+    if (!dataOlx) return null;
+    const dataEntrada = new Date(dataOlx + "T00:00:00");
+    if (isNaN(dataEntrada.getTime())) return null;
+
+    const hoje = new Date();
+    // Zera horas para contar apenas dias inteiros
+    hoje.setHours(0, 0, 0, 0);
+    dataEntrada.setHours(0, 0, 0, 0);
+
+    const diferencaMs = hoje - dataEntrada;
+    const dias = Math.floor(diferencaMs / (1000 * 60 * 60 * 24));
+    return dias >= 0 ? dias : 0;
+}
+
+// Calculate accumulated cost on OLX
+function calcularCustoAcumulado(custoOlx, diasNaOlx) {
+    if (diasNaOlx === null || diasNaOlx === undefined) return 0;
+    const custo = custoOlx || 97.90;
+    return (custo / 30) * diasNaOlx;
+}
+
 // Parse data for 'Estoque' sheet tab
 function processEstoqueData(rows) {
     if (!rows || rows.length < 2) return;
@@ -187,6 +210,10 @@ function processEstoqueData(rows) {
             } else if (header === 'destaque' || header === 'hot') {
                 const hotVal = val.toString().toLowerCase().trim();
                 car.hot = hotVal === 'true' || hotVal === '1' || hotVal === 'sim';
+            } else if (header === 'data_olx' || header === 'data olx' || header === 'data') {
+                car.data_olx = val.toString().trim();
+            } else if (header === 'custo_olx' || header === 'custo olx' || header === 'custo') {
+                car.custo_olx = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 97.90;
             }
         });
 
@@ -198,6 +225,7 @@ function processEstoqueData(rows) {
             car.status = car.status || 'stock';
             car.image = car.image || 'img_suv';
             car.hot = car.hot || false;
+            car.custo_olx = car.custo_olx !== undefined ? car.custo_olx : 97.90;
             newInventory.push(car);
         }
     }
@@ -274,6 +302,7 @@ function switchTab(tabId) {
         overview: "Visão Geral do Marketing",
         simulator: "Simulador de Verba",
         "olx-manager": "Gerenciador do Plano OLX",
+        "olx-rotation": "Painel de Rotação OLX",
         "campaign-tracker": "Rastreamento de Performance Real",
         integrations: "Conexões de API & Planilhas",
         "local-insights": "Insights de Mercado Regional (ES)"
@@ -295,6 +324,7 @@ function renderAll() {
     calculateBudgetSimulation(false); // Update simulator projections with current state budget
     renderPerformanceChart();
     renderKanban();
+    renderOLXRotation();
     renderCampaignTable();
     updateTips();
 }
@@ -714,6 +744,72 @@ function renderKanban() {
     }
 }
 
+// Render the OLX Rotation table list
+function renderOLXRotation() {
+    const tbody = document.getElementById("olxRotationTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    // Filtra os carros ativos que possuem data de anúncio na OLX
+    const activeCars = state.inventory.filter(car => car.status === 'active' && car.data_olx);
+
+    // Mapear dados com cálculos de dias e custo acumulado
+    const calculatedCars = activeCars.map(car => {
+        const dias = calcularDiasNaOlx(car.data_olx);
+        const custo = car.custo_olx || 97.90;
+        const custoAcumulado = calcularCustoAcumulado(custo, dias);
+        return {
+            ...car,
+            dias,
+            custoAcumulado
+        };
+    });
+
+    // Ordenar do com MAIS dias para o com MENOS dias (ordem decrescente)
+    calculatedCars.sort((a, b) => b.dias - a.dias);
+
+    let totalCustoAcumulado = 0;
+
+    calculatedCars.forEach(car => {
+        totalCustoAcumulado += car.custoAcumulado;
+        
+        const tr = document.createElement("tr");
+        const formattedCusto = car.custoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const formattedDate = new Date(car.data_olx + "T00:00:00").toLocaleDateString('pt-BR');
+        
+        let recommendationText = "";
+        if (car.dias > 20) {
+            tr.className = "row-alert";
+            recommendationText = `<span class="badge badge-alert">⚠️ Substituir - ${car.dias} dias parado</span>`;
+        } else {
+            recommendationText = `<span class="badge" style="color: var(--success) !important; background: var(--success-bg) !important; border-color: rgba(22, 163, 74, 0.2) !important;">Ok - Ativo</span>`;
+        }
+
+        tr.innerHTML = `
+            <td><strong>${car.model}</strong></td>
+            <td>${formattedDate}</td>
+            <td>${car.dias} dias</td>
+            <td>${formattedCusto}</td>
+            <td>${recommendationText}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Atualizar sumários no topo da aba de rotação
+    const totalOcupadas = state.inventory.filter(car => car.status === 'active').length;
+    document.getElementById("rot-stat-vagas").innerText = `${totalOcupadas} / 10`;
+    document.getElementById("rot-stat-custo-total").innerText = totalCustoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    const subText = document.getElementById("rot-stat-vagas-sub");
+    if (subText) {
+        if (totalOcupadas > 10) {
+            subText.innerHTML = `<span class="text-danger">Limite de 10 Vagas Excedido!</span>`;
+        } else {
+            subText.innerText = "Vagas ativas no plano";
+        }
+    }
+}
+
 // Create Card DOM Element
 function createCarCard(car, index) {
     const cardEl = document.createElement("div");
@@ -950,7 +1046,6 @@ function saveCampaign(event) {
     renderAll();
 }
 
-// Clear local campaigns
 function clearCampaignHistory() {
     if (confirm("Deseja realmente apagar todo o histórico de campanhas?")) {
         state.campaigns = [];
@@ -1000,7 +1095,7 @@ function connectMockAPI(type) {
             return;
         }
         
-        btn.innerText = "Integrando...";
+        btn.innerText = "Sincronizando...";
         btn.disabled = true;
 
         // Disparar requisições em paralelo para as abas "Estoque" e "Campanhas"
