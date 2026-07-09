@@ -110,19 +110,27 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.onclick = () => disconnectMockAPI('sheets');
         }
 
-        // Sincronismo inicial silencioso em background
-        fetch('/api/sheets-read', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl })
-        })
-        .then(res => res.json())
-        .then(result => {
-            if (result.success) {
-                processSheetsData(result.data);
+        // Sincronismo inicial silencioso em background para ambas as abas (Estoque e Campanhas)
+        Promise.all([
+            fetch('/api/sheets-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Estoque' })
+            }).then(res => res.json()),
+            fetch('/api/sheets-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Campanhas' })
+            }).then(res => res.json())
+        ])
+        .then(([resEstoque, resCampanhas]) => {
+            if (resEstoque.success && resCampanhas.success) {
+                processEstoqueData(resEstoque.data);
+                processCampanhaData(resCampanhas.data);
+                renderAll();
             }
         })
-        .catch(err => console.error("Erro no sincronismo inicial com a planilha:", err));
+        .catch(err => console.error("Erro no sincronismo inicial com as abas:", err));
     }
 
     // Initialize Lucide Icons
@@ -135,111 +143,112 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAll();
 });
 
-// Save states helper functions
+// Save inventory to storage
 function saveInventoryToStorage() {
     localStorage.setItem("automarketing_inventory", JSON.stringify(state.inventory));
 }
 
-// Process data received from Google Sheets Serverless Function
-function processSheetsData(rows) {
-    if (!rows || rows.length < 2) return; // Necessário pelo menos cabeçalho e 1 linha
+// Save campaigns to storage
+function saveCampaignsToStorage() {
+    localStorage.setItem("automarketing_campaigns", JSON.stringify(state.campaigns));
+}
+
+// Parse data for 'Estoque' sheet tab
+function processEstoqueData(rows) {
+    if (!rows || rows.length < 2) return;
 
     const headers = rows[0].map(h => h.toString().toLowerCase().trim());
-    
-    const isInventory = headers.includes('modelo') || headers.includes('model');
-    const isCampaign = headers.includes('leads') || headers.includes('spent') || headers.includes('gasto');
+    const newInventory = [];
 
-    if (isInventory) {
-        const newInventory = [];
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (row.length === 0 || !row[0]) continue;
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length === 0 || !row[0]) continue;
 
-            const car = {};
-            headers.forEach((header, index) => {
-                const val = row[index];
-                if (val === undefined || val === null) return;
+        const car = {};
+        headers.forEach((header, index) => {
+            const val = row[index];
+            if (val === undefined || val === null) return;
 
-                if (header === 'modelo' || header === 'model') {
-                    car.model = val.toString();
-                } else if (header === 'ano' || header === 'year') {
-                    car.year = val.toString();
-                } else if (header === 'preco' || header === 'price') {
-                    car.price = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 0;
-                } else if (header === 'km') {
-                    car.km = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
-                } else if (header === 'status') {
-                    const statusVal = val.toString().toLowerCase().trim();
-                    if (['active', 'ativo', 'olx'].includes(statusVal)) car.status = 'active';
-                    else if (['sold', 'vendido'].includes(statusVal)) car.status = 'sold';
-                    else car.status = 'stock';
-                } else if (header === 'imagem' || header === 'image') {
-                    car.image = val.toString();
-                } else if (header === 'destaque' || header === 'hot') {
-                    const hotVal = val.toString().toLowerCase().trim();
-                    car.hot = hotVal === 'true' || hotVal === '1' || hotVal === 'sim';
-                }
-            });
-
-            if (car.model) {
-                car.id = car.id || (Date.now() + i);
-                car.year = car.year || '2020/2020';
-                car.price = car.price || 0;
-                car.km = car.km || 0;
-                car.status = car.status || 'stock';
-                car.image = car.image || 'img_suv';
-                car.hot = car.hot || false;
-                newInventory.push(car);
+            if (header === 'modelo' || header === 'model') {
+                car.model = val.toString();
+            } else if (header === 'ano' || header === 'year') {
+                car.year = val.toString();
+            } else if (header === 'preco' || header === 'price') {
+                car.price = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 0;
+            } else if (header === 'km') {
+                car.km = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
+            } else if (header === 'status') {
+                const statusVal = val.toString().toLowerCase().trim();
+                if (['active', 'ativo', 'olx'].includes(statusVal)) car.status = 'active';
+                else if (['sold', 'vendido'].includes(statusVal)) car.status = 'sold';
+                else car.status = 'stock';
+            } else if (header === 'imagem' || header === 'image') {
+                car.image = val.toString();
+            } else if (header === 'destaque' || header === 'hot') {
+                const hotVal = val.toString().toLowerCase().trim();
+                car.hot = hotVal === 'true' || hotVal === '1' || hotVal === 'sim';
             }
+        });
+
+        if (car.model) {
+            car.id = car.id || (Date.now() + i);
+            car.year = car.year || '2020/2020';
+            car.price = car.price || 0;
+            car.km = car.km || 0;
+            car.status = car.status || 'stock';
+            car.image = car.image || 'img_suv';
+            car.hot = car.hot || false;
+            newInventory.push(car);
         }
+    }
 
-        if (newInventory.length > 0) {
-            state.inventory = newInventory;
-            saveInventoryToStorage();
-            renderAll();
-        }
-    } else if (isCampaign) {
-        const newCampaigns = [];
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (row.length === 0 || !row[0]) continue;
-
-            const camp = {};
-            headers.forEach((header, index) => {
-                const val = row[index];
-                if (val === undefined || val === null) return;
-
-                if (header === 'data' || header === 'date') {
-                    camp.date = val.toString();
-                } else if (header === 'canal' || header === 'channel') {
-                    camp.channel = val.toString();
-                } else if (header === 'gasto' || header === 'spent' || header === 'valor') {
-                    camp.spent = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 0;
-                } else if (header === 'leads' || header === 'contatos') {
-                    camp.leads = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
-                } else if (header === 'vendas' || header === 'sales') {
-                    camp.sales = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
-                }
-            });
-
-            if (camp.date && camp.channel) {
-                camp.spent = camp.spent || 0;
-                camp.leads = camp.leads || 0;
-                camp.sales = camp.sales || 0;
-                newCampaigns.push(camp);
-            }
-        }
-
-        if (newCampaigns.length > 0) {
-            state.campaigns = newCampaigns;
-            saveCampaignsToStorage();
-            renderAll();
-        }
+    if (newInventory.length > 0) {
+        state.inventory = newInventory;
+        saveInventoryToStorage();
     }
 }
 
-function saveCampaignsToStorage() {
-    localStorage.setItem("automarketing_campaigns", JSON.stringify(state.campaigns));
+// Parse data for 'Campanhas' sheet tab
+function processCampanhaData(rows) {
+    if (!rows || rows.length < 2) return;
+
+    const headers = rows[0].map(h => h.toString().toLowerCase().trim());
+    const newCampaigns = [];
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length === 0 || !row[0]) continue;
+
+        const camp = {};
+        headers.forEach((header, index) => {
+            const val = row[index];
+            if (val === undefined || val === null) return;
+
+            if (header === 'date' || header === 'data') {
+                camp.date = val.toString();
+            } else if (header === 'channel' || header === 'canal') {
+                camp.channel = val.toString();
+            } else if (header === 'spent' || header === 'gasto' || header === 'valor') {
+                camp.spent = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 0;
+            } else if (header === 'leads' || header === 'contatos') {
+                camp.leads = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
+            } else if (header === 'sales' || header === 'vendas') {
+                camp.sales = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
+            }
+        });
+
+        if (camp.date && camp.channel) {
+            camp.spent = camp.spent || 0;
+            camp.leads = camp.leads || 0;
+            camp.sales = camp.sales || 0;
+            newCampaigns.push(camp);
+        }
+    }
+
+    if (newCampaigns.length > 0) {
+        state.campaigns = newCampaigns;
+        saveCampaignsToStorage();
+    }
 }
 
 // Navigation / Tabs System
@@ -787,11 +796,6 @@ function drag(ev, index) {
     ev.dataTransfer.setData("text/plain", index);
 }
 
-// Save inventory to localStorage
-function saveInventoryToStorage() {
-    localStorage.setItem("automarketing_inventory", JSON.stringify(state.inventory));
-}
-
 function allowDrop(ev) {
     ev.preventDefault();
 }
@@ -817,13 +821,6 @@ function drop(ev, targetStatus) {
     if (index !== "") {
         moveCar(parseInt(index), targetStatus);
     }
-}
-
-// Move Car Status
-function moveCar(index, newStatus) {
-    state.inventory[index].status = newStatus;
-    saveInventoryToStorage();
-    renderAll();
 }
 
 // Car Modal Add / Edit UI controller
@@ -953,6 +950,7 @@ function saveCampaign(event) {
     renderAll();
 }
 
+// Clear local campaigns
 function clearCampaignHistory() {
     if (confirm("Deseja realmente apagar todo o histórico de campanhas?")) {
         state.campaigns = [];
@@ -961,7 +959,7 @@ function clearCampaignHistory() {
     }
 }
 
-// Integration Real API System - Google Sheets Real fetch
+// Integration Real API System (Google Sheets Live Auth & Read)
 function connectMockAPI(type) {
     if (type === 'meta') {
         const token = document.getElementById("meta-token").value.trim();
@@ -1002,53 +1000,67 @@ function connectMockAPI(type) {
             return;
         }
         
-        btn.innerText = "Sincronizando...";
+        btn.innerText = "Integrando...";
         btn.disabled = true;
-        
-        // Chamada real para a Serverless Function na Vercel
-        fetch('/api/sheets-read', {
+
+        // Disparar requisições em paralelo para as abas "Estoque" e "Campanhas"
+        const fetchEstoque = fetch('/api/sheets-read', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ spreadsheetUrl: url })
-        })
-        .then(res => res.json())
-        .then(result => {
-            if (!result.success) {
-                throw new Error(result.error || 'Erro na leitura do Google Sheets.');
-            }
-            
-            badge.innerText = "Sincronizado";
-            badge.style.background = "rgba(16, 185, 129, 0.1)";
-            badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
-            badge.style.color = "var(--success)";
-            
-            btn.innerText = "Desconectar";
-            btn.disabled = false;
-            btn.className = "btn btn-outline btn-sm";
-            btn.onclick = () => disconnectMockAPI('sheets');
-            
-            // Persistir localmente a URL
-            localStorage.setItem("suagaragem_sheets_url", url);
-            
-            // Processar e atualizar estoque ou campanhas vindo da planilha
-            processSheetsData(result.data);
-            
-            alert("Planilha do Google Sheets integrada e sincronizada com sucesso!");
-        })
-        .catch(err => {
-            badge.innerText = "Erro";
-            badge.style.background = "rgba(229, 9, 20, 0.1)";
-            badge.style.borderColor = "rgba(229, 9, 20, 0.2)";
-            badge.style.color = "var(--primary)";
-            
-            btn.innerText = "Integrar Planilha";
-            btn.disabled = false;
-            
-            alert(`Falha na integração com a planilha:\n${err.message}`);
-        });
-    }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ spreadsheetUrl: url, sheetName: 'Estoque' })
+        }).then(res => res.json());
+
+        const fetchCampanhas = fetch('/api/sheets-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ spreadsheetUrl: url, sheetName: 'Campanhas' })
+        }).then(res => res.json());
+
+        Promise.all([fetchEstoque, fetchCampanhas])
+            .then(([resEstoque, resCampanhas]) => {
+                if (!resEstoque.success) {
+                    throw new Error(`Aba 'Estoque': ${resEstoque.error}`);
+                }
+                if (!resCampanhas.success) {
+                    throw new Error(`Aba 'Campanhas': ${resCampanhas.error}`);
+                }
+
+                // Processar e salvar os dados de ambas as abas
+                processEstoqueData(resEstoque.data);
+                processCampanhaData(resCampanhas.data);
+
+                // Configurar interface como integrada e com sucesso
+                badge.innerText = "Sincronizado";
+                badge.style.background = "rgba(16, 185, 129, 0.1)";
+                badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
+                badge.style.color = "var(--success)";
+                
+                btn.innerText = "Desconectar";
+                btn.disabled = false;
+                btn.className = "btn btn-outline btn-sm";
+                btn.onclick = () => disconnectMockAPI('sheets');
+
+                // Persistir localmente a URL
+                localStorage.setItem("suagaragem_sheets_url", url);
+                
+                // Forçar renderização geral dos dados sincronizados
+                renderAll();
+                
+                alert("Planilha integrada! As abas 'Estoque' e 'Campanhas' foram sincronizadas com sucesso.");
+            })
+            .catch(err => {
+                // Restaurar interface com estado de erro
+                badge.innerText = "Erro";
+                badge.style.background = "rgba(229, 9, 20, 0.1)";
+                badge.style.borderColor = "rgba(229, 9, 20, 0.2)";
+                badge.style.color = "var(--primary)";
+                
+                btn.innerText = "Integrar Planilha";
+                btn.disabled = false;
+                
+                alert(`Falha na integração:\n${err.message}`);
+            });
+        }
 }
 
 function disconnectMockAPI(type) {
@@ -1143,6 +1155,7 @@ function openXMLModal() {
     if (modal) modal.classList.add("active");
 }
 
+// Close XML viewer
 function closeXMLModal() {
     const modal = document.getElementById("xmlModal");
     if (modal) modal.classList.remove("active");

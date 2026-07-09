@@ -6,7 +6,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ success: false, error: 'Método não permitido. Utilize POST.' });
     }
 
-    const { spreadsheetUrl } = req.body;
+    const { spreadsheetUrl, sheetName } = req.body;
 
     if (!spreadsheetUrl) {
         return res.status(400).json({ success: false, error: 'O parâmetro spreadsheetUrl é obrigatório no corpo da requisição.' });
@@ -31,6 +31,9 @@ export default async function handler(req, res) {
         });
     }
 
+    // Define o range com base no nome opcional da aba (sheetName)
+    const range = sheetName ? `${sheetName}!A1:Z100` : 'A1:Z100';
+
     try {
         // Inicializar autenticação JWT usando a Conta de Serviço do Google
         const auth = new google.auth.GoogleAuth({
@@ -43,10 +46,10 @@ export default async function handler(req, res) {
 
         const sheets = google.sheets({ version: 'v4', auth });
 
-        // Ler a primeira aba (A1:Z100)
+        // Ler o intervalo da planilha
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: 'A1:Z100'
+            range
         });
 
         return res.status(200).json({
@@ -55,10 +58,10 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error('Erro na Vercel Serverless Function (Service Account):', error);
+        console.error(`Erro na leitura do range "${range}" do Google Sheets:`, error);
 
         let status = 500;
-        let errorMessage = 'Falha ao ler os dados da planilha do Google Sheets via Conta de Serviço.';
+        let errorMessage = `Falha ao ler os dados da planilha do Google Sheets (Aba: ${sheetName || 'Padrão'}).`;
 
         const code = error.code || (error.response && error.response.status);
         
@@ -70,7 +73,11 @@ export default async function handler(req, res) {
             errorMessage = `Acesso negado. Certifique-se de compartilhar a planilha com o e-mail da sua Conta de Serviço ("${clientEmail}") dando permissão de "Leitor" (Viewer).`;
         } else if (code === 400) {
             status = 400;
-            errorMessage = 'Solicitação inválida. O formato do ID ou o intervalo de dados especificado pode estar incorreto.';
+            if (error.message && error.message.includes('Unable to parse range')) {
+                errorMessage = `A aba "${sheetName}" não foi encontrada na planilha. Verifique se o nome está correto e se ela existe.`;
+            } else {
+                errorMessage = 'Solicitação inválida. O formato do ID ou o intervalo de dados especificado pode estar incorreto.';
+            }
         } else if (error.message) {
             errorMessage = `Erro retornado pelo Google: ${error.message}`;
         }
