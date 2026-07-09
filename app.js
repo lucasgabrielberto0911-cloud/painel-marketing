@@ -32,7 +32,9 @@ const IMAGE_MAP = {
     img_suv: 'assets/suv_modern.jpg',
     img_sedan: 'assets/sedan_elegant.jpg',
     img_hatch: 'assets/hatch_economic.jpg',
-    img_pickup: 'assets/pickup_robust.jpg'
+    img_pickup: 'assets/pickup_robust.jpg',
+    img_conversivel: 'assets/conversivel_esportivo.jpg',
+    img_utilitario: 'assets/utilitario_van.jpg'
 };
 
 // Region Benchmarks (CPL - Custo por Lead e Conversão)
