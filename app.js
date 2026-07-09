@@ -57,6 +57,16 @@ const REGION_BENCHMARKS = {
     }
 };
 
+// Debounce helper to optimize rendering on input searches
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
 // App Initialization
 document.addEventListener("DOMContentLoaded", () => {
     // Load local storage or use defaults
@@ -131,6 +141,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         })
         .catch(err => console.error("Erro no sincronismo inicial com as abas:", err));
+    }
+
+    // Debounced Search Event Listener (reduces rendering calls)
+    const searchInput = document.getElementById("kanbanSearch");
+    if (searchInput) {
+        searchInput.addEventListener("input", debounce(() => {
+            renderKanban();
+        }, 300));
     }
 
     // Initialize Lucide Icons
@@ -883,7 +901,7 @@ function createCarCard(car, index) {
             ${car.hot ? '<span class="car-hot-badge">Giro Rápido</span>' : ''}
         </div>
         <div class="car-img-wrapper">
-            <img src="${imagePath}" alt="${car.model}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <img src="${imagePath}" alt="${car.model}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
             <i data-lucide="car" style="display:none;"></i>
         </div>
         <div class="car-info-grid">
@@ -923,6 +941,7 @@ function drag(ev, index) {
     ev.dataTransfer.setData("text/plain", index);
 }
 
+// Drop validation rules
 function allowDrop(ev) {
     ev.preventDefault();
 }

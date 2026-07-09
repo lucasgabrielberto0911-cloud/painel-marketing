@@ -8,8 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <!-- Application Logic -->
+    <script src="app.js" defer></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-theme">
@@ -358,7 +362,7 @@
                 <div class="kanban-filters" style="display: flex; gap: 1rem; margin-bottom: 1.25rem; align-items: center; flex-wrap: wrap;">
                     <div class="input-with-currency" style="flex: 1; min-width: 250px; padding: 0.5rem 0.75rem;">
                         <i data-lucide="search" style="width: 16px; height: 16px; color: var(--text-muted); margin-right: 0.5rem;"></i>
-                        <input type="text" id="kanbanSearch" placeholder="Buscar por modelo ou versão..." oninput="renderKanban()" style="font-size: 0.82rem; font-weight: 500;">
+                        <input type="text" id="kanbanSearch" placeholder="Buscar por modelo ou versão..." style="font-size: 0.82rem; font-weight: 500;">
                     </div>
                     <select id="kanbanTypeFilter" onchange="renderKanban()" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; width: auto; min-width: 150px; outline: none; cursor: pointer;">
                         <option value="all">Todas as carrocerias</option>
@@ -844,7 +848,5 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="app.js"></script>
 </body>
 </html>
