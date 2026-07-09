@@ -824,7 +824,7 @@ function renderOLXRotation() {
         
         let recommendationText = "";
         if (car.dias === null) {
-            recommendationText = `<span class="badge" style="color: var(--text-muted); background: rgba(255,255,255,0.02); border-color: var(--border-color);">Sem data de anúncio</span>`;
+            recommendationText = `<span class="badge" style="color: var(--warning) !important; background: var(--warning-bg) !important; border-color: rgba(217, 119, 6, 0.2) !important;">⚠️ Sem data de anúncio</span>`;
         } else if (car.dias > 20) {
             tr.className = "row-alert";
             recommendationText = `<span class="badge badge-alert">⚠️ Substituir - ${car.dias} dias parado</span>`;
@@ -1147,8 +1147,7 @@ function syncMetaAdsData(silent = false) {
 
     if (syncBtn) {
         syncBtn.disabled = true;
-        syncBtn.innerHTML = `<i data-lucide="refresh-cw" class="animate-spin"></i> Sincronizando...`;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        syncBtn.innerHTML = `<span class="spinner"></span> Sincronizando...`;
     }
 
     Promise.all([
@@ -1202,7 +1201,7 @@ function renderMetaAdsTable(campaigns, insights) {
         // Status mapping
         const statusRaw = (camp.status || "").toUpperCase().trim();
         let statusText = "Pausada";
-        let statusBadgeClass = "style='color: var(--text-muted) !important; background: rgba(255, 255, 255, 0.03) !important; border-color: var(--border-color) !important;'";
+        let statusBadgeClass = "style='color: var(--primary-light) !important; background: rgba(220, 38, 38, 0.08) !important; border-color: rgba(220, 38, 38, 0.2) !important;'";
         
         if (statusRaw === 'ACTIVE') {
             statusText = "Ativa";
@@ -1267,7 +1266,7 @@ function connectMockAPI(type) {
             return;
         }
         
-        btn.innerText = "Conectando...";
+        btn.innerHTML = `<span class="spinner"></span> Conectando...`;
         btn.disabled = true;
         
         setTimeout(() => {
@@ -1296,7 +1295,7 @@ function connectMockAPI(type) {
             return;
         }
         
-        btn.innerText = "Sincronizando...";
+        btn.innerHTML = `<span class="spinner"></span> Sincronizando...`;
         btn.disabled = true;
 
         // Disparar requisições em paralelo para as abas "Estoque" e "Campanhas"

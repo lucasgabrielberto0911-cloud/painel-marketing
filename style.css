@@ -987,14 +987,73 @@ body {
     .form-row-2 { grid-template-columns: 1fr; }
 }
 
+.table tbody tr {
+    transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out;
+}
+
 .row-alert {
     border-left: 3px solid var(--primary) !important;
-    background: rgba(220, 38, 38, 0.03) !important;
+    animation: rowAlertFadeIn 0.3s ease-in-out forwards;
 }
+
+@keyframes rowAlertFadeIn {
+    from { background-color: transparent; }
+    to { background-color: rgba(220, 38, 38, 0.04); }
+}
+
 .badge-alert {
     background: rgba(220, 38, 38, 0.12) !important;
     color: var(--primary-light) !important;
     border: 1px solid rgba(220, 38, 38, 0.25) !important;
+}
+
+/* Animations & Transitions */
+.tab-content {
+    display: none;
+    opacity: 0;
+}
+.tab-content.active {
+    display: block;
+    animation: tabFadeIn 0.22s ease-in-out forwards;
+}
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.car-card, .table tbody tr {
+    animation: elementFadeIn 0.2s ease-in-out forwards;
+}
+
+@keyframes elementFadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hover shadow effects */
+.btn:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+/* Pure CSS Loading Spinner */
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 @keyframes pulse {
@@ -1002,5 +1061,6 @@ body {
     50% { opacity: 0.3; }
     100% { opacity: 0.6; }
 }
+
 
 
