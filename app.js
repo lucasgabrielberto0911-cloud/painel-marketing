@@ -752,14 +752,14 @@ function renderOLXRotation() {
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    // Filtra os carros ativos que possuem data de anúncio na OLX
-    const activeCars = state.inventory.filter(car => car.status === 'active' && car.data_olx);
+    // Filtra os carros ativos
+    const activeCars = state.inventory.filter(car => car.status === 'active');
 
     // Mapear dados com cálculos de dias e custo acumulado
     const calculatedCars = activeCars.map(car => {
-        const dias = calcularDiasNaOlx(car.data_olx);
+        const dias = car.data_olx ? calcularDiasNaOlx(car.data_olx) : null;
         const custo = car.custo_olx || 97.90;
-        const custoAcumulado = calcularCustoAcumulado(custo, dias);
+        const custoAcumulado = dias !== null ? calcularCustoAcumulado(custo, dias) : 0;
         return {
             ...car,
             dias,
@@ -767,8 +767,13 @@ function renderOLXRotation() {
         };
     });
 
-    // Ordenar do com MAIS dias para o com MENOS dias (ordem decrescente)
-    calculatedCars.sort((a, b) => b.dias - a.dias);
+    // Ordenar do com MAIS dias para o com MENOS dias (nulos por último)
+    calculatedCars.sort((a, b) => {
+        if (a.dias === null && b.dias === null) return 0;
+        if (a.dias === null) return 1;
+        if (b.dias === null) return -1;
+        return b.dias - a.dias;
+    });
 
     let totalCustoAcumulado = 0;
 
@@ -776,16 +781,27 @@ function renderOLXRotation() {
         totalCustoAcumulado += car.custoAcumulado;
         
         const tr = document.createElement("tr");
-        const formattedCusto = car.custoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const formattedDate = new Date(car.data_olx + "T00:00:00").toLocaleDateString('pt-BR');
         
-        // Custo por Lead (CPL) individual do carro na OLX
+        const formattedCusto = car.dias !== null 
+            ? car.custoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) 
+            : "—";
+            
+        const formattedDate = car.data_olx 
+            ? new Date(car.data_olx + "T00:00:00").toLocaleDateString('pt-BR') 
+            : "—";
+            
+        const diasText = car.dias !== null ? `${car.dias} dias` : "—";
+        
         const carLeads = car.leads || 0;
-        const cplVaga = carLeads > 0 ? (car.custoAcumulado / carLeads) : null;
+        
+        // Custo por Lead (CPL) individual do carro na OLX (custo acumulado / leads)
+        const cplVaga = (car.dias !== null && carLeads > 0) ? (car.custoAcumulado / carLeads) : null;
         const formattedCplVaga = cplVaga !== null ? cplVaga.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : "—";
         
         let recommendationText = "";
-        if (car.dias > 20) {
+        if (car.dias === null) {
+            recommendationText = `<span class="badge" style="color: var(--text-muted); background: rgba(255,255,255,0.02); border-color: var(--border-color);">Sem data de anúncio</span>`;
+        } else if (car.dias > 20) {
             tr.className = "row-alert";
             recommendationText = `<span class="badge badge-alert">⚠️ Substituir - ${car.dias} dias parado</span>`;
         } else {
@@ -795,7 +811,7 @@ function renderOLXRotation() {
         tr.innerHTML = `
             <td><strong>${car.model}</strong></td>
             <td>${formattedDate}</td>
-            <td>${car.dias} dias</td>
+            <td>${diasText}</td>
             <td><strong>${carLeads}</strong> contatos</td>
             <td>${formattedCusto}</td>
             <td><strong>${formattedCplVaga}</strong></td>
@@ -805,7 +821,7 @@ function renderOLXRotation() {
     });
 
     // Atualizar sumários no topo da aba de rotação
-    const totalOcupadas = state.inventory.filter(car => car.status === 'active').length;
+    const totalOcupadas = activeCars.length;
     document.getElementById("rot-stat-vagas").innerText = `${totalOcupadas} / 10`;
     document.getElementById("rot-stat-custo-total").innerText = totalCustoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -938,6 +954,7 @@ function openAddCarModal() {
     document.getElementById("carModal").classList.add("active");
 }
 
+// Edit Car from Kanban
 function editCar(index) {
     const car = state.inventory[index];
     document.getElementById("modalTitle").innerText = "Editar Carro";
