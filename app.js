@@ -13,12 +13,12 @@ let state = {
 
 // Initial Mock Data
 const INITIAL_CARS = [
-    { id: 1, model: "Jeep Renegade 1.8 Flex Automático", year: "2020/2020", price: 82000, km: 54000, status: "active", image: "img_suv", hot: true, data_olx: "2026-06-15", custo_olx: 97.90 },
-    { id: 2, model: "Chevrolet Onix 1.0 Turbo LTZ", year: "2021/2022", price: 74900, km: 38000, status: "active", image: "img_hatch", hot: false, data_olx: "2026-06-28", custo_olx: 97.90 },
-    { id: 3, model: "Toyota Hilux 2.8 D-4D Diesel SRX", year: "2019/2019", price: 189000, km: 92000, status: "stock", image: "img_pickup", hot: true },
-    { id: 4, model: "Honda Civic 2.0 EXL Automático", year: "2018/2019", price: 98000, km: 71000, status: "stock", image: "img_sedan", hot: false },
-    { id: 5, model: "Hyundai Creta 1.6 Pulse Plus", year: "2021/2021", price: 89900, km: 42000, status: "active", image: "img_suv", hot: false, data_olx: "2026-07-02", custo_olx: 97.90 },
-    { id: 6, model: "Fiat Strada 1.3 Firefly Volcano", year: "2022/2023", price: 92000, km: 23000, status: "sold", image: "img_pickup", hot: false }
+    { id: 1, model: "Jeep Renegade 1.8 Flex Automático", year: "2020/2020", price: 82000, km: 54000, status: "active", image: "img_suv", hot: true, data_olx: "2026-06-15", custo_olx: 97.90, leads: 12 },
+    { id: 2, model: "Chevrolet Onix 1.0 Turbo LTZ", year: "2021/2022", price: 74900, km: 38000, status: "active", image: "img_hatch", hot: false, data_olx: "2026-06-28", custo_olx: 97.90, leads: 6 },
+    { id: 3, model: "Toyota Hilux 2.8 D-4D Diesel SRX", year: "2019/2019", price: 189000, km: 92000, status: "stock", image: "img_pickup", hot: true, leads: 0 },
+    { id: 4, model: "Honda Civic 2.0 EXL Automático", year: "2018/2019", price: 98000, km: 71000, status: "stock", image: "img_sedan", hot: false, leads: 0 },
+    { id: 5, model: "Hyundai Creta 1.6 Pulse Plus", year: "2021/2021", price: 89900, km: 42000, status: "active", image: "img_suv", hot: false, data_olx: "2026-07-02", custo_olx: 97.90, leads: 8 },
+    { id: 6, model: "Fiat Strada 1.3 Firefly Volcano", year: "2022/2023", price: 92000, km: 23000, status: "sold", image: "img_pickup", hot: false, leads: 0 }
 ];
 
 const INITIAL_CAMPAIGNS = [
@@ -160,7 +160,6 @@ function calcularDiasNaOlx(dataOlx) {
     if (isNaN(dataEntrada.getTime())) return null;
 
     const hoje = new Date();
-    // Zera horas para contar apenas dias inteiros
     hoje.setHours(0, 0, 0, 0);
     dataEntrada.setHours(0, 0, 0, 0);
 
@@ -214,6 +213,8 @@ function processEstoqueData(rows) {
                 car.data_olx = val.toString().trim();
             } else if (header === 'custo_olx' || header === 'custo olx' || header === 'custo') {
                 car.custo_olx = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 97.90;
+            } else if (header === 'leads' || header === 'contatos') {
+                car.leads = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
             }
         });
 
@@ -226,6 +227,7 @@ function processEstoqueData(rows) {
             car.image = car.image || 'img_suv';
             car.hot = car.hot || false;
             car.custo_olx = car.custo_olx !== undefined ? car.custo_olx : 97.90;
+            car.leads = car.leads || 0;
             newInventory.push(car);
         }
     }
@@ -777,6 +779,11 @@ function renderOLXRotation() {
         const formattedCusto = car.custoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formattedDate = new Date(car.data_olx + "T00:00:00").toLocaleDateString('pt-BR');
         
+        // Custo por Lead (CPL) individual do carro na OLX
+        const carLeads = car.leads || 0;
+        const cplVaga = carLeads > 0 ? (car.custoAcumulado / carLeads) : null;
+        const formattedCplVaga = cplVaga !== null ? cplVaga.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : "—";
+        
         let recommendationText = "";
         if (car.dias > 20) {
             tr.className = "row-alert";
@@ -789,7 +796,9 @@ function renderOLXRotation() {
             <td><strong>${car.model}</strong></td>
             <td>${formattedDate}</td>
             <td>${car.dias} dias</td>
+            <td><strong>${carLeads}</strong> contatos</td>
             <td>${formattedCusto}</td>
+            <td><strong>${formattedCplVaga}</strong></td>
             <td>${recommendationText}</td>
         `;
         tbody.appendChild(tr);
@@ -1008,10 +1017,18 @@ function renderCampaignTable() {
     if (!tbody) return;
     tbody.innerHTML = "";
 
+    let totalSpent = 0;
+    let totalLeads = 0;
+    let totalSales = 0;
+
     // Sort campaigns by date descending
     const sorted = [...state.campaigns].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     sorted.forEach(camp => {
+        totalSpent += camp.spent;
+        totalLeads += camp.leads;
+        totalSales += camp.sales;
+
         const cpl = camp.leads > 0 ? (camp.spent / camp.leads) : 0;
         const formattedDate = new Date(camp.date + "T00:00:00").toLocaleDateString('pt-BR');
         
@@ -1026,6 +1043,19 @@ function renderCampaignTable() {
         `;
         tbody.appendChild(row);
     });
+
+    // Update Campaign Summary Cards
+    const gastoContainer = document.getElementById("camp-stat-gasto");
+    const leadsContainer = document.getElementById("camp-stat-leads");
+    const vendasContainer = document.getElementById("camp-stat-vendas");
+    const convContainer = document.getElementById("camp-stat-conversao");
+
+    if (gastoContainer) gastoContainer.innerText = totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if (leadsContainer) leadsContainer.innerText = `${totalLeads} contatos`;
+    if (vendasContainer) vendasContainer.innerText = `${totalSales} vendas`;
+
+    const convRate = totalLeads > 0 ? (totalSales / totalLeads) * 100 : 0;
+    if (convContainer) convContainer.innerText = `${convRate.toFixed(2)}%`;
 }
 
 // Save logged campaigns

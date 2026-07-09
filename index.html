@@ -459,7 +459,9 @@
                                     <th>Veículo</th>
                                     <th>Data de Anúncio</th>
                                     <th>Dias na OLX</th>
+                                    <th>Leads Recebidos</th>
                                     <th>Custo Acumulado</th>
+                                    <th>CPL (Vaga)</th>
                                     <th>Status / Recomendação</th>
                                 </tr>
                             </thead>
@@ -473,6 +475,60 @@
 
             <!-- Tab Content: Campaign Tracker -->
             <section id="tab-campaign-tracker" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper orange">
+                            <i data-lucide="dollar-sign"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Gasto Total</h3>
+                            <p class="stat-value" id="camp-stat-gasto">R$ 0,00</p>
+                            <span class="stat-change">
+                                Investimento total registrado
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper green">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Total de Leads</h3>
+                            <p class="stat-value" id="camp-stat-leads">0 contatos</p>
+                            <span class="stat-change">
+                                Volume total acumulado
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper blue">
+                            <i data-lucide="check"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Vendas Realizadas</h3>
+                            <p class="stat-value" id="camp-stat-vendas">0 vendas</p>
+                            <span class="stat-change">
+                                Conversões finais fechadas
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper purple">
+                            <i data-lucide="percent"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Taxa de Conversão</h3>
+                            <p class="stat-value" id="camp-stat-conversao">0,00%</p>
+                            <span class="stat-change">
+                                Leads convertidos em vendas
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="dashboard-grid-1-2">
                     <!-- Form side -->
                     <div class="dashboard-card glass">
