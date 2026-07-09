@@ -1,0 +1,12 @@
+{
+  "name": "painel-marketing",
+  "version": "1.0.0",
+  "description": "Painel de Marketing Sua Garagem - Integrador de Planilhas",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "googleapis": "^140.0.0"
+  }
+}
