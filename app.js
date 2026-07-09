@@ -109,6 +109,20 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.className = "btn btn-outline btn-sm";
             btn.onclick = () => disconnectMockAPI('sheets');
         }
+
+        // Sincronismo inicial silencioso em background
+        fetch('/api/sheets-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                processSheetsData(result.data);
+            }
+        })
+        .catch(err => console.error("Erro no sincronismo inicial com a planilha:", err));
     }
 
     // Initialize Lucide Icons
@@ -124,6 +138,104 @@ document.addEventListener("DOMContentLoaded", () => {
 // Save states helper functions
 function saveInventoryToStorage() {
     localStorage.setItem("automarketing_inventory", JSON.stringify(state.inventory));
+}
+
+// Process data received from Google Sheets Serverless Function
+function processSheetsData(rows) {
+    if (!rows || rows.length < 2) return; // Necessário pelo menos cabeçalho e 1 linha
+
+    const headers = rows[0].map(h => h.toString().toLowerCase().trim());
+    
+    const isInventory = headers.includes('modelo') || headers.includes('model');
+    const isCampaign = headers.includes('leads') || headers.includes('spent') || headers.includes('gasto');
+
+    if (isInventory) {
+        const newInventory = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.length === 0 || !row[0]) continue;
+
+            const car = {};
+            headers.forEach((header, index) => {
+                const val = row[index];
+                if (val === undefined || val === null) return;
+
+                if (header === 'modelo' || header === 'model') {
+                    car.model = val.toString();
+                } else if (header === 'ano' || header === 'year') {
+                    car.year = val.toString();
+                } else if (header === 'preco' || header === 'price') {
+                    car.price = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 0;
+                } else if (header === 'km') {
+                    car.km = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
+                } else if (header === 'status') {
+                    const statusVal = val.toString().toLowerCase().trim();
+                    if (['active', 'ativo', 'olx'].includes(statusVal)) car.status = 'active';
+                    else if (['sold', 'vendido'].includes(statusVal)) car.status = 'sold';
+                    else car.status = 'stock';
+                } else if (header === 'imagem' || header === 'image') {
+                    car.image = val.toString();
+                } else if (header === 'destaque' || header === 'hot') {
+                    const hotVal = val.toString().toLowerCase().trim();
+                    car.hot = hotVal === 'true' || hotVal === '1' || hotVal === 'sim';
+                }
+            });
+
+            if (car.model) {
+                car.id = car.id || (Date.now() + i);
+                car.year = car.year || '2020/2020';
+                car.price = car.price || 0;
+                car.km = car.km || 0;
+                car.status = car.status || 'stock';
+                car.image = car.image || 'img_suv';
+                car.hot = car.hot || false;
+                newInventory.push(car);
+            }
+        }
+
+        if (newInventory.length > 0) {
+            state.inventory = newInventory;
+            saveInventoryToStorage();
+            renderAll();
+        }
+    } else if (isCampaign) {
+        const newCampaigns = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.length === 0 || !row[0]) continue;
+
+            const camp = {};
+            headers.forEach((header, index) => {
+                const val = row[index];
+                if (val === undefined || val === null) return;
+
+                if (header === 'data' || header === 'date') {
+                    camp.date = val.toString();
+                } else if (header === 'canal' || header === 'channel') {
+                    camp.channel = val.toString();
+                } else if (header === 'gasto' || header === 'spent' || header === 'valor') {
+                    camp.spent = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 0;
+                } else if (header === 'leads' || header === 'contatos') {
+                    camp.leads = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
+                } else if (header === 'vendas' || header === 'sales') {
+                    camp.sales = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
+                }
+            });
+
+            if (camp.date && camp.channel) {
+                camp.spent = camp.spent || 0;
+                camp.leads = camp.leads || 0;
+                camp.sales = camp.sales || 0;
+                newCampaigns.push(camp);
+            }
+        }
+
+        if (newCampaigns.length > 0) {
+            state.campaigns = newCampaigns;
+            saveCampaignsToStorage();
+            renderAll();
+        }
+    }
 }
 
 function saveCampaignsToStorage() {
@@ -675,6 +787,11 @@ function drag(ev, index) {
     ev.dataTransfer.setData("text/plain", index);
 }
 
+// Save inventory to localStorage
+function saveInventoryToStorage() {
+    localStorage.setItem("automarketing_inventory", JSON.stringify(state.inventory));
+}
+
 function allowDrop(ev) {
     ev.preventDefault();
 }
@@ -844,7 +961,7 @@ function clearCampaignHistory() {
     }
 }
 
-// Integration Mock System with LocalStorage persistence
+// Integration Real API System - Google Sheets Real fetch
 function connectMockAPI(type) {
     if (type === 'meta') {
         const token = document.getElementById("meta-token").value.trim();
@@ -885,10 +1002,23 @@ function connectMockAPI(type) {
             return;
         }
         
-        btn.innerText = "Integrando...";
+        btn.innerText = "Sincronizando...";
         btn.disabled = true;
         
-        setTimeout(() => {
+        // Chamada real para a Serverless Function na Vercel
+        fetch('/api/sheets-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ spreadsheetUrl: url })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (!result.success) {
+                throw new Error(result.error || 'Erro na leitura do Google Sheets.');
+            }
+            
             badge.innerText = "Sincronizado";
             badge.style.background = "rgba(16, 185, 129, 0.1)";
             badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
@@ -899,11 +1029,25 @@ function connectMockAPI(type) {
             btn.className = "btn btn-outline btn-sm";
             btn.onclick = () => disconnectMockAPI('sheets');
             
-            // Persist locally
+            // Persistir localmente a URL
             localStorage.setItem("suagaragem_sheets_url", url);
             
-            alert("Planilha sincronizada! Os novos contatos de leads cairão diretamente nesta planilha.");
-        }, 1200);
+            // Processar e atualizar estoque ou campanhas vindo da planilha
+            processSheetsData(result.data);
+            
+            alert("Planilha do Google Sheets integrada e sincronizada com sucesso!");
+        })
+        .catch(err => {
+            badge.innerText = "Erro";
+            badge.style.background = "rgba(229, 9, 20, 0.1)";
+            badge.style.borderColor = "rgba(229, 9, 20, 0.2)";
+            badge.style.color = "var(--primary)";
+            
+            btn.innerText = "Integrar Planilha";
+            btn.disabled = false;
+            
+            alert(`Falha na integração com a planilha:\n${err.message}`);
+        });
     }
 }
 
