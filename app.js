@@ -67,6 +67,31 @@ function debounce(func, wait) {
     };
 }
 
+// Toast Notification System
+function showToast(message) {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.style.cssText = "position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;";
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = "toast-card glass";
+    toast.style.cssText = "background: rgba(10, 11, 15, 0.95); border: 1px solid var(--primary); color: #fff; padding: 12px 20px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); font-family: var(--font-body); font-size: 0.82rem; font-weight: 500; display: flex; align-items: center; gap: 8px; animation: toastSlideIn 0.25s ease forwards;";
+    toast.innerHTML = `<span style="color: var(--success); font-weight: bold; font-size: 1rem;">✔</span> ${message}`;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = "toastSlideOut 0.25s ease forwards";
+        setTimeout(() => {
+            toast.remove();
+        }, 250);
+    }, 3000);
+}
+
 // App Initialization
 document.addEventListener("DOMContentLoaded", () => {
     // Load local storage or use defaults
@@ -205,6 +230,8 @@ function processEstoqueData(rows) {
         if (row.length === 0 || !row[0]) continue;
 
         const car = {};
+        car.rowIndex = i + 1; // 1-based index to enable update actions
+
         headers.forEach((header, index) => {
             const val = row[index];
             if (val === undefined || val === null) return;
@@ -776,20 +803,20 @@ function renderOLXRotation() {
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    // Filtra os carros ativos
-    const activeCars = state.inventory.filter(car => car.status === 'active');
-
-    // Mapear dados com cálculos de dias e custo acumulado
-    const calculatedCars = activeCars.map(car => {
-        const dias = car.data_olx ? calcularDiasNaOlx(car.data_olx) : null;
-        const custo = car.custo_olx || 97.90;
-        const custoAcumulado = dias !== null ? calcularCustoAcumulado(custo, dias) : 0;
-        return {
-            ...car,
-            dias,
-            custoAcumulado
-        };
-    });
+    // Filtra os carros ativos mapeando seu índice original
+    const calculatedCars = state.inventory
+        .map((car, index) => ({ ...car, originalIndex: index }))
+        .filter(car => car.status === 'active')
+        .map(car => {
+            const dias = car.data_olx ? calcularDiasNaOlx(car.data_olx) : null;
+            const custo = car.custo_olx || 97.90;
+            const custoAcumulado = dias !== null ? calcularCustoAcumulado(custo, dias) : 0;
+            return {
+                ...car,
+                dias,
+                custoAcumulado
+            };
+        });
 
     // Ordenar do com MAIS dias para o com MENOS dias (nulos por último)
     calculatedCars.sort((a, b) => {
@@ -840,12 +867,18 @@ function renderOLXRotation() {
             <td>${formattedCusto}</td>
             <td><strong>${formattedCplVaga}</strong></td>
             <td>${recommendationText}</td>
+            <td>
+                <div style="display: flex; gap: 0.4rem;">
+                    <button class="btn btn-outline btn-sm" onclick="editCar(${car.originalIndex})" title="Editar veículo" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; gap: 0.2rem; min-height: auto;"><i data-lucide="edit"></i> Editar</button>
+                    <button class="btn btn-primary btn-sm" onclick="markAsSoldQuick(${car.originalIndex})" title="Marcar como vendido" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; gap: 0.2rem; min-height: auto;"><i data-lucide="check"></i> Vendido</button>
+                </div>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 
     // Atualizar sumários no topo da aba de rotação
-    const totalOcupadas = activeCars.length;
+    const totalOcupadas = calculatedCars.length;
     document.getElementById("rot-stat-vagas").innerText = `${totalOcupadas} / 10`;
     document.getElementById("rot-stat-custo-total").innerText = totalCustoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -857,6 +890,13 @@ function renderOLXRotation() {
             subText.innerText = "Vagas ativas no plano";
         }
     }
+
+    // Refresh icons inside table buttons
+    setTimeout(() => {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }, 0);
 }
 
 // Create Card DOM Element
@@ -877,13 +917,16 @@ function createCarCard(car, index) {
             <button class="btn btn-outline btn-sm" onclick="moveCar(${index}, 'active')" title="Ativar no plano OLX">
                 Ativar OLX <i data-lucide="arrow-right"></i>
             </button>
+            <button class="btn btn-outline btn-sm" onclick="markAsSoldQuick(${index})" title="Marcar como vendido">
+                <i data-lucide="check"></i> Vendido
+            </button>
         `;
     } else if (car.status === "active") {
         actionButtons = `
             <button class="btn btn-outline btn-sm" onclick="moveCar(${index}, 'stock')" title="Mover de volta para estoque">
                 <i data-lucide="arrow-left"></i> Estoque
             </button>
-            <button class="btn btn-primary btn-sm" onclick="moveCar(${index}, 'sold')" title="Marcar como vendido">
+            <button class="btn btn-primary btn-sm" onclick="markAsSoldQuick(${index})" title="Marcar como vendido">
                 <i data-lucide="check"></i> Vendido
             </button>
         `;
@@ -974,6 +1017,8 @@ function openAddCarModal() {
     document.getElementById("modalTitle").innerText = "Adicionar Carro ao Estoque";
     document.getElementById("carForm").reset();
     document.getElementById("carIndex").value = "";
+    document.getElementById("car-data-olx").value = "";
+    document.getElementById("car-custo-olx").value = "";
     previewSelectedImage();
     
     document.getElementById("carModal").classList.add("active");
@@ -992,6 +1037,8 @@ function editCar(index) {
     document.getElementById("car-status").value = car.status;
     document.getElementById("car-image").value = car.image;
     document.getElementById("car-hot").checked = car.hot;
+    document.getElementById("car-data-olx").value = car.data_olx || "";
+    document.getElementById("car-custo-olx").value = car.custo_olx || "";
 
     previewSelectedImage();
     document.getElementById("carModal").classList.add("active");
@@ -1025,23 +1072,93 @@ function handleCarFormSubmit(event) {
     const status = document.getElementById("car-status").value;
     const image = document.getElementById("car-image").value;
     const hot = document.getElementById("car-hot").checked;
+    const data_olx = document.getElementById("car-data-olx").value;
+    const custo_olx_val = document.getElementById("car-custo-olx").value;
+    const custo_olx = custo_olx_val !== "" ? parseFloat(custo_olx_val) : "";
 
-    const carData = { model, year, price, km, status, image, hot };
+    const rowData = {
+        modelo: model,
+        ano: year,
+        preco: price,
+        km: km,
+        status: status,
+        imagem: image,
+        hot: hot,
+        data_olx: data_olx || "",
+        custo_olx: custo_olx !== "" ? custo_olx : "",
+        leads: indexVal !== "" ? (state.inventory[parseInt(indexVal)].leads || 0) : 0
+    };
 
-    if (indexVal === "") {
-        // Add new
-        carData.id = Date.now();
-        state.inventory.push(carData);
+    const sheetsUrl = localStorage.getItem("suagaragem_sheets_url");
+
+    if (sheetsUrl) {
+        // Exibir spinner no botão salvar do modal
+        const submitBtn = document.querySelector("#carForm button[type='submit']");
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner"></span> Salvando...`;
+
+        const action = indexVal === "" ? "add" : "update";
+        const rowIndex = indexVal !== "" ? state.inventory[parseInt(indexVal)].rowIndex : null;
+
+        fetch('/api/sheets-write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                spreadsheetUrl: sheetsUrl,
+                sheetName: "Estoque",
+                action,
+                rowData,
+                rowIndex
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                throw new Error(res.error || "Erro de escrita no Google Sheets.");
+            }
+            
+            showToast("Carro salvo com sucesso no Google Sheets!");
+            closeCarModal();
+
+            // Recarregar os dados do Sheets
+            connectMockAPI('sheets');
+        })
+        .catch(err => {
+            alert(`Erro ao salvar no Google Sheets:\n${err.message}`);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+        });
+
     } else {
-        // Edit existing
-        const index = parseInt(indexVal);
-        carData.id = state.inventory[index].id;
-        state.inventory[index] = carData;
-    }
+        // Fallback local caso não tenha planilha conectada
+        const carData = { 
+            model, 
+            year, 
+            price, 
+            km, 
+            status, 
+            image, 
+            hot, 
+            data_olx: data_olx || "", 
+            custo_olx: custo_olx !== "" ? custo_olx : "", 
+            leads: indexVal !== "" ? (state.inventory[parseInt(indexVal)].leads || 0) : 0 
+        };
 
-    saveInventoryToStorage();
-    closeCarModal();
-    renderAll();
+        if (indexVal === "") {
+            carData.id = Date.now();
+            state.inventory.push(carData);
+        } else {
+            const index = parseInt(indexVal);
+            carData.id = state.inventory[index].id;
+            state.inventory[index] = carData;
+        }
+
+        saveInventoryToStorage();
+        closeCarModal();
+        renderAll();
+        showToast("Salvo localmente no navegador!");
+    }
 }
 
 // Delete Car from Inventory
@@ -1050,8 +1167,79 @@ function deleteCar(index) {
         state.inventory.splice(index, 1);
         saveInventoryToStorage();
         renderAll();
+        showToast("Carro excluído localmente!");
     }
 }
+
+// Write/Update status action back to Sheets
+function updateCarStatusSheets(index, targetStatus) {
+    const car = state.inventory[index];
+    const sheetsUrl = localStorage.getItem("suagaragem_sheets_url");
+
+    if (!sheetsUrl) {
+        // Fallback local
+        car.status = targetStatus;
+        saveInventoryToStorage();
+        renderAll();
+        showToast("Status atualizado localmente!");
+        return;
+    }
+
+    const rowData = {
+        modelo: car.model,
+        ano: car.year,
+        preco: car.price,
+        km: car.km,
+        status: targetStatus,
+        imagem: car.image,
+        hot: car.hot,
+        data_olx: car.data_olx || "",
+        custo_olx: car.custo_olx !== undefined ? car.custo_olx : "",
+        leads: car.leads || 0
+    };
+
+    // Mudar localmente primeiro para resposta visual imediata no Kanban
+    const originalStatus = car.status;
+    car.status = targetStatus;
+    renderAll();
+
+    fetch('/api/sheets-write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            spreadsheetUrl: sheetsUrl,
+            sheetName: "Estoque",
+            action: "update",
+            rowData,
+            rowIndex: car.rowIndex
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (!res.success) {
+            throw new Error(res.error || "Erro ao salvar alteração no Google Sheets.");
+        }
+        saveInventoryToStorage();
+        showToast("Status atualizado no Google Sheets com sucesso!");
+    })
+    .catch(err => {
+        // Rollback se falhar
+        car.status = originalStatus;
+        renderAll();
+        alert(`Falha ao salvar alteração no Google Sheets:\n${err.message}`);
+    });
+}
+
+// Quick status actions
+window.markAsSoldQuick = function(index) {
+    if (confirm("Deseja realmente marcar este veículo como Vendido?")) {
+        updateCarStatusSheets(index, 'sold');
+    }
+};
+
+window.moveCar = function(index, targetStatus) {
+    updateCarStatusSheets(index, targetStatus);
+};
 
 // CAMPAIGN LOGS TRACKER SYSTEM
 function renderCampaignTable() {
@@ -1266,7 +1454,7 @@ function connectMockAPI(type) {
             return;
         }
         
-        btn.innerHTML = `<span class="spinner"></span> Conectando...`;
+        btn.innerText = "Conectando...";
         btn.disabled = true;
         
         setTimeout(() => {
@@ -1341,7 +1529,7 @@ function connectMockAPI(type) {
                 // Forçar renderização geral dos dados sincronizados
                 renderAll();
                 
-                alert("Planilha integrada! As abas 'Estoque' e 'Campanhas' foram sincronizadas com sucesso.");
+                showToast("Dados do Google Sheets sincronizados!");
             })
             .catch(err => {
                 // Restaurar interface com estado de erro
@@ -1478,7 +1666,5 @@ function downloadXMLFeed() {
 
 // Global Move Car helper to easily allow dragging columns
 window.moveCar = function(index, targetStatus) {
-    state.inventory[index].status = targetStatus;
-    saveInventoryToStorage();
-    renderAll();
+    updateCarStatusSheets(index, targetStatus);
 };

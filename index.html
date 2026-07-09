@@ -471,6 +471,7 @@
                                     <th>Custo Acumulado</th>
                                     <th>CPL (Vaga)</th>
                                     <th>Status / Recomendação</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="olxRotationTableBody">
@@ -812,6 +813,16 @@
                         </select>
                         <div class="img-preview-box mt-2">
                             <img id="car-img-preview" src="" alt="Preview" style="display:none; max-height: 120px; border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="car-data-olx">Data de Entrada na OLX (Opcional)</label>
+                            <input type="date" id="car-data-olx" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label for="car-custo-olx">Custo do Anúncio (R$ - Opcional)</label>
+                            <input type="number" id="car-custo-olx" step="0.01" placeholder="Ex: 97,90" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
                         </div>
                     </div>
                     <div class="form-group flex-row align-center">
