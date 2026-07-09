@@ -208,6 +208,27 @@
                                     </button>
                                 </div>
                             </div>
+                </div>
+
+                <!-- Performance History Chart -->
+                <div class="dashboard-card glass mt-4">
+                    <div class="card-header">
+                        <div>
+                            <h2>Histórico de Performance (Leads Gerados)</h2>
+                            <p class="card-subtitle">Evolução do volume de contatos nos últimos meses por canal de tráfego</p>
+                        </div>
+                        <i data-lucide="trending-up" class="text-muted"></i>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                            <svg id="performanceChart" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                                <!-- populated via JS -->
+                            </svg>
+                        </div>
+                        <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
+                            <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--olx-color); border-radius: 2px;"></span> OLX</span>
+                            <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--fb-color); border-radius: 2px;"></span> Facebook</span>
+                            <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--ig-color); border-radius: 2px;"></span> Instagram</span>
                         </div>
                     </div>
                 </div>
@@ -325,36 +346,51 @@
                     </div>
                 </div>
 
+                <!-- Kanban Search & Filters -->
+                <div class="kanban-filters" style="display: flex; gap: 1rem; margin-bottom: 1.25rem; align-items: center; flex-wrap: wrap;">
+                    <div class="input-with-currency" style="flex: 1; min-width: 250px; padding: 0.5rem 0.75rem;">
+                        <i data-lucide="search" style="width: 16px; height: 16px; color: var(--text-muted); margin-right: 0.5rem;"></i>
+                        <input type="text" id="kanbanSearch" placeholder="Buscar por modelo ou versão..." oninput="renderKanban()" style="font-size: 0.82rem; font-weight: 500;">
+                    </div>
+                    <select id="kanbanTypeFilter" onchange="renderKanban()" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; width: auto; min-width: 150px; outline: none; cursor: pointer;">
+                        <option value="all">Todas as carrocerias</option>
+                        <option value="img_suv">SUVs</option>
+                        <option value="img_sedan">Sedans</option>
+                        <option value="img_hatch">Hatchbacks</option>
+                        <option value="img_pickup">Pickups</option>
+                    </select>
+                </div>
+
                 <div class="kanban-board">
                     <!-- Column 1: Fila de Espera (Estoque Geral) -->
-                    <div class="kanban-column" id="col-stock">
+                    <div class="kanban-column" id="col-stock" ondragover="allowDrop(event)" ondrop="drop(event, 'stock')" ondragenter="dragEnter(event, 'stock')" ondragleave="dragLeave(event, 'stock')">
                         <div class="column-header">
                             <h3>Estoque Geral (Fila)</h3>
                             <span class="count-badge" id="count-stock">0</span>
                         </div>
-                        <div class="column-cards" id="cards-stock" ondragover="allowDrop(event)" ondrop="drop(event, 'stock')">
+                        <div class="column-cards" id="cards-stock">
                             <!-- JS populated -->
                         </div>
                     </div>
 
                     <!-- Column 2: Ativos no Plano OLX (Máx 10) -->
-                    <div class="kanban-column highlighted" id="col-active">
+                    <div class="kanban-column highlighted" id="col-active" ondragover="allowDrop(event)" ondrop="drop(event, 'active')" ondragenter="dragEnter(event, 'active')" ondragleave="dragLeave(event, 'active')">
                         <div class="column-header">
                             <h3>Ativos no Plano OLX</h3>
                             <span class="count-badge active-plan" id="count-active">0 / 10</span>
                         </div>
-                        <div class="column-cards" id="cards-active" ondragover="allowDrop(event)" ondrop="drop(event, 'active')">
+                        <div class="column-cards" id="cards-active">
                             <!-- JS populated -->
                         </div>
                     </div>
 
                     <!-- Column 3: Vendidos (Histórico) -->
-                    <div class="kanban-column" id="col-sold">
+                    <div class="kanban-column" id="col-sold" ondragover="allowDrop(event)" ondrop="drop(event, 'sold')" ondragenter="dragEnter(event, 'sold')" ondragleave="dragLeave(event, 'sold')">
                         <div class="column-header">
                             <h3>Vendidos</h3>
                             <span class="count-badge sold-plan" id="count-sold">0</span>
                         </div>
-                        <div class="column-cards" id="cards-sold" ondragover="allowDrop(event)" ondrop="drop(event, 'sold')">
+                        <div class="column-cards" id="cards-sold">
                             <!-- JS populated -->
                         </div>
                     </div>
@@ -519,9 +555,16 @@
                             </p>
                             <div class="input-with-currency mt-2" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                                 <input type="text" id="olx-feed-url" readonly value="https://api.automarketing.com.br/feed/olx/linhares-vitoria.xml" style="color: var(--text-secondary); font-size: 0.82rem; width: 80%;">
-                                <button class="btn btn-outline btn-sm" onclick="copyFeedURL()" style="padding: 0.65rem;"><i data-lucide="copy" style="width:16px; height:16px;"></i></button>
                             </div>
-                            <div class="tip-box mt-3">
+                            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                                <button class="btn btn-primary btn-sm" onclick="openXMLModal()" style="flex: 1; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.76rem;">
+                                    <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Visualizar XML
+                                </button>
+                                <button class="btn btn-outline btn-sm" onclick="downloadXMLFeed()" style="flex: 1; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.76rem;">
+                                    <i data-lucide="download" style="width: 14px; height: 14px;"></i> Baixar XML
+                                </button>
+                            </div>
+                            <div class="tip-box">
                                 <i data-lucide="info" style="color: var(--primary) !important;"></i>
                                 <p>Ao arrastar um carro para a coluna "Ativos no Plano OLX" no Kanban, este feed é atualizado automaticamente em tempo real.</p>
                             </div>
@@ -592,6 +635,26 @@
                         <button type="submit" class="btn btn-primary">Salvar Carro</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- XML Feed Viewer Modal -->
+    <div class="modal-overlay" id="xmlModal">
+        <div class="modal-card glass" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2>Feed XML Integrador OLX</h2>
+                <button class="btn-close" onclick="closeXMLModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <p class="field-info" style="margin-bottom: 0.2rem;">Este é o conteúdo real do feed XML gerado dinamicamente para os carros ativos no plano.</p>
+                <div style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; overflow: auto; max-height: 350px;">
+                    <pre id="xmlFeedContent" style="font-family: monospace; font-size: 0.78rem; color: #f43f5e; white-space: pre-wrap; word-break: break-all; margin: 0; text-align: left;"></pre>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeXMLModal()">Fechar</button>
+                    <button class="btn btn-primary" onclick="copyXMLContent()"><i data-lucide="copy"></i> Copiar Conteúdo</button>
+                </div>
             </div>
         </div>
     </div>
