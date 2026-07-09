@@ -13,7 +13,6 @@ export default async function handler(req, res) {
     }
 
     // Regex para extrair o ID da planilha da URL do Google Sheets
-    // Exemplo: https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0
     const match = spreadsheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
     
     if (!match || !match[1]) {
@@ -21,18 +20,28 @@ export default async function handler(req, res) {
     }
 
     const spreadsheetId = match[1];
-    const apiKey = process.env.GOOGLE_API_KEY;
+    
+    const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
 
-    if (!apiKey) {
+    if (!clientEmail || !privateKey) {
         return res.status(500).json({ 
             success: false, 
-            error: 'Serviço indisponível: a variável de ambiente GOOGLE_API_KEY não foi configurada.' 
+            error: 'Serviço indisponível: as variáveis de ambiente GOOGLE_SERVICE_ACCOUNT_EMAIL e/ou GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY não foram configuradas.' 
         });
     }
 
     try {
-        // Inicializar a API do Sheets usando a API KEY para leitura pública
-        const sheets = google.sheets({ version: 'v4', auth: apiKey });
+        // Inicializar autenticação JWT usando a Conta de Serviço do Google
+        const auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: clientEmail,
+                private_key: privateKey.replace(/\\n/g, '\n')
+            },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
+        });
+
+        const sheets = google.sheets({ version: 'v4', auth });
 
         // Ler a primeira aba (A1:Z100)
         const response = await sheets.spreadsheets.values.get({
@@ -46,13 +55,11 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error('Erro na Vercel Serverless Function:', error);
+        console.error('Erro na Vercel Serverless Function (Service Account):', error);
 
-        // Tratar erros comuns de forma explicativa em português
         let status = 500;
-        let errorMessage = 'Falha ao ler os dados da planilha do Google Sheets.';
+        let errorMessage = 'Falha ao ler os dados da planilha do Google Sheets via Conta de Serviço.';
 
-        // Erros do Google API vêm estruturados em error.response ou error.errors
         const code = error.code || (error.response && error.response.status);
         
         if (code === 404) {
@@ -60,13 +67,10 @@ export default async function handler(req, res) {
             errorMessage = 'Planilha não encontrada. Verifique se o ID na URL fornecida está correto.';
         } else if (code === 403) {
             status = 403;
-            errorMessage = 'Acesso negado. Certifique-se de que a planilha está configurada como pública ("Qualquer pessoa com o link pode ler") e que a API do Google Sheets está ativa no console.';
+            errorMessage = `Acesso negado. Certifique-se de compartilhar a planilha com o e-mail da sua Conta de Serviço ("${clientEmail}") dando permissão de "Leitor" (Viewer).`;
         } else if (code === 400) {
             status = 400;
             errorMessage = 'Solicitação inválida. O formato do ID ou o intervalo de dados especificado pode estar incorreto.';
-        } else if (error.message && error.message.includes('API key not valid')) {
-            status = 401;
-            errorMessage = 'Chave de API (GOOGLE_API_KEY) configurada é inválida ou incorreta.';
         } else if (error.message) {
             errorMessage = `Erro retornado pelo Google: ${error.message}`;
         }
