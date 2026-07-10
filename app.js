@@ -1208,7 +1208,19 @@ function renderCampaignTable() {
     if (convContainer) convContainer.innerText = `${convRate.toFixed(2)}%`;
 }
 
-// Save logged campaigns
+// Modal Open/Close Controls for Campaign Registration
+window.openCampaignModal = function() {
+    document.getElementById("campaignForm").reset();
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById("camp-date").value = hoje;
+    document.getElementById("campaignModal").classList.add("active");
+};
+
+window.closeCampaignModal = function() {
+    document.getElementById("campaignModal").classList.remove("active");
+};
+
+// Save logged campaigns (sends to sheets-write if integrated)
 function saveCampaign(event) {
     event.preventDefault();
 
@@ -1218,12 +1230,59 @@ function saveCampaign(event) {
     const leads = parseInt(document.getElementById("camp-leads").value);
     const sales = parseInt(document.getElementById("camp-sales").value);
 
-    const newCamp = { date, channel, spent, leads, sales };
-    state.campaigns.push(newCamp);
+    const rowData = {
+        date: date,
+        channel: channel,
+        spent: spent,
+        leads: leads,
+        sales: sales
+    };
 
-    saveCampaignsToStorage();
-    document.getElementById("campaignForm").reset();
-    renderAll();
+    const sheetsUrl = localStorage.getItem("suagaragem_sheets_url");
+
+    if (sheetsUrl) {
+        const submitBtn = document.querySelector("#campaignForm button[type='submit']");
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner"></span> Salvando...`;
+
+        fetch('/api/sheets-write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                spreadsheetUrl: sheetsUrl,
+                sheetName: "Campanhas",
+                action: "add",
+                rowData
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                throw new Error(res.error || "Erro de escrita no Google Sheets.");
+            }
+            
+            showToast("Campanha registrada com sucesso no Google Sheets!");
+            closeCampaignModal();
+
+            // Sincronizar dados das planilhas
+            connectMockAPI('sheets');
+        })
+        .catch(err => {
+            alert(`Erro ao salvar campanha no Google Sheets:\n${err.message}`);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+        });
+
+    } else {
+        const newCamp = { date, channel, spent, leads, sales };
+        state.campaigns.push(newCamp);
+
+        saveCampaignsToStorage();
+        closeCampaignModal();
+        renderAll();
+        showToast("Campanha salva localmente!");
+    }
 }
 
 function clearCampaignHistory() {

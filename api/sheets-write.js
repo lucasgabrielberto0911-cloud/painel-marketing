@@ -48,19 +48,30 @@ export default async function handler(req, res) {
     }
 
     // Preparar os valores na ordem correta da planilha
-    const rowValues = [
-        rowData.modelo || "",
-        rowData.ano || "",
-        rowData.preco !== undefined ? parseFloat(rowData.preco) : 0,
-        rowData.km !== undefined ? parseInt(rowData.km) : 0,
-        rowData.status || "stock",
-        rowData.imagem || "img_suv",
-        rowData.hot ? 'Sim' : 'Não',
-        rowData.data_olx || "",
-        rowData.custo_olx !== undefined ? parseFloat(rowData.custo_olx) : "",
-        rowData.leads !== undefined ? parseInt(rowData.leads) : 0,
-        rowData.verba_mensal !== undefined ? parseFloat(rowData.verba_mensal) : 0
-    ];
+    let rowValues;
+    if (sheetName === 'Campanhas') {
+        rowValues = [
+            rowData.date || "",
+            rowData.channel || "",
+            rowData.spent !== undefined ? parseFloat(rowData.spent) : 0,
+            rowData.leads !== undefined ? parseInt(rowData.leads) : 0,
+            rowData.sales !== undefined ? parseInt(rowData.sales) : 0
+        ];
+    } else {
+        rowValues = [
+            rowData.modelo || "",
+            rowData.ano || "",
+            rowData.preco !== undefined ? parseFloat(rowData.preco) : 0,
+            rowData.km !== undefined ? parseInt(rowData.km) : 0,
+            rowData.status || "stock",
+            rowData.imagem || "img_suv",
+            rowData.hot ? 'Sim' : 'Não',
+            rowData.data_olx || "",
+            rowData.custo_olx !== undefined ? parseFloat(rowData.custo_olx) : "",
+            rowData.leads !== undefined ? parseInt(rowData.leads) : 0,
+            rowData.verba_mensal !== undefined ? parseFloat(rowData.verba_mensal) : 0
+        ];
+    }
 
     try {
         // Inicializar autenticação JWT com permissão de Escrita (scopes: spreadsheets)
