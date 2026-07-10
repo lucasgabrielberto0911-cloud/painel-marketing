@@ -5,20 +5,20 @@
    ============================================================ */
 
 :root {
-    /* Background palette */
-    --bg-main: #08090c;
-    --bg-sidebar: #0a0b0f;
-    --bg-card: #101219;
-    --bg-card-hover: #14161f;
-    --bg-input: rgba(0, 0, 0, 0.3);
-    --border-color: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(255, 255, 255, 0.16);
-    --border-focus: rgba(220, 38, 38, 0.5);
+    /* Background palette — pure black base with dark-gray surfaces */
+    --bg-main: #000000;
+    --bg-sidebar: #050505;
+    --bg-card: #111111;
+    --bg-card-hover: #161616;
+    --bg-input: rgba(255, 255, 255, 0.02);
+    --border-color: #1f1f1f;
+    --border-hover: #333333;
+    --border-focus: rgba(220, 38, 38, 0.6);
 
-    /* Text */
-    --text-primary: #e6e7ec;
-    --text-secondary: #8b8fa3;
-    --text-muted: #62657a;
+    /* Text — tuned for contrast on pure black */
+    --text-primary: #f2f2f5;
+    --text-secondary: #a6a8b5;
+    --text-muted: #8a8c99;
 
     /* Brand reds (used for destructive/negative + brand accents) */
     --primary: #dc2626;
@@ -482,7 +482,22 @@ body {
     align-items: flex-start;
 }
 .tip-box i { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
-.tip-box p { font-size: .77rem; line-height: 1.45; color: var(--text-secondary); }
+.tip-box p { font-size: .78rem; line-height: 1.5; color: #d6cbb0; }
+.tip-box p strong { color: #f4e4c1; }
+
+/* Chart empty-state message (centered, legible) */
+.chart-empty-msg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem;
+    font-size: .85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
 
 /* ======================== OLX SLOTS ======================== */
 .olx-status-container {
@@ -765,7 +780,7 @@ body {
     width: 100%; height: 62px;
     border-radius: var(--radius-md);
     overflow: hidden;
-    background: #0d0e14;
+    background: #0a0a0a;
     display: flex; align-items: center; justify-content: center;
 }
 .car-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
@@ -911,7 +926,7 @@ body {
 .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
 .modal-card {
-    background: #0e0f14;
+    background: #111111;
     border: 1px solid var(--border-hover);
     border-radius: var(--radius-card);
     width: 100%; max-width: 460px;

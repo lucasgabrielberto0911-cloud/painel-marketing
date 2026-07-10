@@ -12,6 +12,8 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest" defer></script>
+    <!-- Chart.js (charts library) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <!-- Application Logic -->
     <script src="app.js" defer></script>
     <link rel="stylesheet" href="style.css">
@@ -279,10 +281,9 @@
                         <i data-lucide="trending-up" class="text-muted"></i>
                     </div>
                     <div class="card-body">
-                        <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
-                            <svg id="performanceChart" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
-                                <!-- populated via JS -->
-                            </svg>
+                        <div class="chart-container" style="position: relative; min-height: 250px; height: 250px; width: 100%;">
+                            <canvas id="performanceChart"></canvas>
+                            <p id="performanceChartEmpty" class="chart-empty-msg" style="display: none;">Sem dados de campanhas registrados no momento.</p>
                         </div>
                         <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
                             <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--olx-color); border-radius: 2px;"></span> OLX</span>
@@ -315,10 +316,8 @@
                                 <i data-lucide="dollar-sign" class="text-muted"></i>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
-                                    <svg id="chartBudgetTrend" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
-                                        <!-- dynamic svg lines -->
-                                    </svg>
+                                <div class="chart-container" style="position: relative; min-height: 250px; height: 250px; width: 100%;">
+                                    <canvas id="chartBudgetTrend"></canvas>
                                 </div>
                                 <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
                                     <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--primary); border-radius: 2px;"></span> Planejado (Estoque)</span>
@@ -337,10 +336,8 @@
                                 <i data-lucide="trending-up" class="text-muted"></i>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
-                                    <svg id="chartLeadsSalesTrend" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
-                                        <!-- dynamic svg lines -->
-                                    </svg>
+                                <div class="chart-container" style="position: relative; min-height: 250px; height: 250px; width: 100%;">
+                                    <canvas id="chartLeadsSalesTrend"></canvas>
                                 </div>
                                 <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
                                     <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--success); border-radius: 2px;"></span> Vendas Realizadas</span>
