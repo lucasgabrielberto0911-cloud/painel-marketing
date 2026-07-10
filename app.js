@@ -549,183 +549,137 @@ function updateTips() {
     if (tipText) tipText.innerHTML = benchmarks.tip;
 }
 
-// Draw dynamic SVG Performance Chart on Overview Tab
-function renderPerformanceChart() {
-    const svg = document.getElementById("performanceChart");
-    if (!svg) return;
-    svg.innerHTML = "";
+// ============================================================
+// Chart.js helpers — shared config for the dark/black theme
+// ============================================================
+const CHART_COLORS = {
+    olx: "#f06400",
+    fb: "#1877f2",
+    ig: "#e1306c",
+    primary: "#dc2626",
+    success: "#16a34a",
+    indigo: "#6366f1",
+    axis: "#a6a8b5",        // legible light-gray for axis text
+    grid: "rgba(255, 255, 255, 0.05)" // very subtle grid lines
+};
 
-    if (state.campaigns.length === 0) {
-        svg.innerHTML = `<text x="400" y="100" fill="var(--text-muted)" font-family="var(--font-body)" font-size="14" text-anchor="middle">Sem dados de campanhas registrados no momento.</text>`;
+// Registry of live Chart.js instances (so we can destroy before re-render)
+const chartInstances = {};
+
+function hexToRgba(hex, alpha) {
+    const h = hex.replace("#", "");
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Shared base options for all line charts (dark theme, legible axes, tooltips)
+function baseLineChartOptions(extra = {}) {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                enabled: true,
+                backgroundColor: "#161616",
+                borderColor: "#333333",
+                borderWidth: 1,
+                titleColor: "#f2f2f5",
+                bodyColor: "#d6d6db",
+                padding: 10,
+                cornerRadius: 4,
+                titleFont: { family: "'Inter', sans-serif", weight: "600" },
+                bodyFont: { family: "'Roboto Mono', monospace" },
+                ...(extra.tooltip || {})
+            }
+        },
+        scales: {
+            x: {
+                grid: { color: CHART_COLORS.grid, drawTicks: false },
+                border: { color: "#1f1f1f" },
+                ticks: { color: CHART_COLORS.axis, font: { family: "'Inter', sans-serif", size: 11 } }
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: CHART_COLORS.grid, drawTicks: false },
+                border: { display: false },
+                ticks: { color: CHART_COLORS.axis, font: { family: "'Roboto Mono', monospace", size: 11 }, ...(extra.yTicks || {}) }
+            }
+        },
+        elements: {
+            line: { tension: 0.35, borderWidth: 2.5 },
+            point: { radius: 3, hoverRadius: 5, borderWidth: 1.5, borderColor: "#111111" }
+        }
+    };
+}
+
+function lineDataset(label, data, color) {
+    return {
+        label,
+        data,
+        borderColor: color,
+        backgroundColor: hexToRgba(color, 0.15),
+        pointBackgroundColor: color,
+        fill: true,
+        spanGaps: true
+    };
+}
+
+// Render Performance Chart on Overview Tab (leads by channel over time) via Chart.js
+function renderPerformanceChart() {
+    const canvas = document.getElementById("performanceChart");
+    if (!canvas || typeof Chart === "undefined") return;
+
+    const emptyMsg = document.getElementById("performanceChartEmpty");
+
+    // Same data derivation as before: unique sorted dates + leads per channel per date
+    const campaigns = [...state.campaigns].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const dates = [...new Set(campaigns.map(c => c.date))];
+
+    // Empty / insufficient data: keep the "Sem dados" message centered and legible
+    if (dates.length < 2) {
+        if (chartInstances.performanceChart) {
+            chartInstances.performanceChart.destroy();
+            chartInstances.performanceChart = null;
+        }
+        canvas.style.display = "none";
+        if (emptyMsg) emptyMsg.style.display = "flex";
         return;
     }
 
-    const campaigns = [...state.campaigns].sort((a, b) => new Date(a.date) - new Date(b.date));
+    canvas.style.display = "block";
+    if (emptyMsg) emptyMsg.style.display = "none";
 
-    const dates = [...new Set(campaigns.map(c => c.date))];
-    if (dates.length < 2) {
-        const dateObj = new Date(dates[0]);
-        dateObj.setDate(dateObj.getDate() - 5);
-        dates.unshift(dateObj.toISOString().split('T')[0]);
-    }
-
-    let maxLeads = 10;
-    campaigns.forEach(c => {
-        if (c.leads > maxLeads) maxLeads = c.leads;
-    });
-    maxLeads = Math.ceil(maxLeads / 10) * 10;
-
-    const width = 800;
-    const height = 200;
-    const paddingLeft = 50;
-    const paddingRight = 30;
-    const paddingTop = 20;
-    const paddingBottom = 30;
-
-    const chartWidth = width - paddingLeft - paddingRight;
-    const chartHeight = height - paddingTop - paddingBottom;
-
-    const getY = (val) => {
-        return paddingTop + chartHeight - (val / maxLeads) * chartHeight;
-    };
-
-    const getX = (index) => {
-        return paddingLeft + (index / (dates.length - 1)) * chartWidth;
-    };
-
-    // Draw Gridlines and Y Labels
-    const gridLinesCount = 4;
-    for (let i = 0; i <= gridLinesCount; i++) {
-        const val = (maxLeads / gridLinesCount) * i;
-        const y = getY(val);
-
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", paddingLeft);
-        line.setAttribute("y1", y);
-        line.setAttribute("x2", width - paddingRight);
-        line.setAttribute("y2", y);
-        line.setAttribute("stroke", "rgba(255, 255, 255, 0.04)");
-        line.setAttribute("stroke-dasharray", "4,4");
-        svg.appendChild(line);
-
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", paddingLeft - 10);
-        label.setAttribute("y", y + 4);
-        label.setAttribute("fill", "var(--text-muted)");
-        label.setAttribute("font-size", "10");
-        label.setAttribute("font-family", "var(--font-body)");
-        label.setAttribute("text-anchor", "end");
-        label.textContent = Math.round(val);
-        svg.appendChild(label);
-    }
-
-    // Draw X Labels
-    dates.forEach((d, idx) => {
-        const x = getX(idx);
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", x);
-        label.setAttribute("y", height - 10);
-        label.setAttribute("fill", "var(--text-muted)");
-        label.setAttribute("font-size", "10");
-        label.setAttribute("font-family", "var(--font-body)");
-        label.setAttribute("text-anchor", "middle");
-
-        const formatted = new Date(d + "T00:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        label.textContent = formatted;
-        svg.appendChild(label);
-    });
+    const labels = dates.map(d => new Date(d + "T00:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
 
     const channels = [
-        { name: "OLX", color: "var(--olx-color)", gradientId: "grad-olx" },
-        { name: "Facebook Marketplace", color: "var(--fb-color)", gradientId: "grad-fb" },
-        { name: "Instagram Ads", color: "var(--ig-color)", gradientId: "grad-ig" }
+        { name: "OLX", color: CHART_COLORS.olx },
+        { name: "Facebook Marketplace", color: CHART_COLORS.fb },
+        { name: "Instagram Ads", color: CHART_COLORS.ig }
     ];
 
-    // Define Gradients in SVG
-    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-    channels.forEach(ch => {
-        const grad = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
-        grad.setAttribute("id", ch.gradientId);
-        grad.setAttribute("x1", "0");
-        grad.setAttribute("y1", "0");
-        grad.setAttribute("x2", "0");
-        grad.setAttribute("y2", "1");
-
-        const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-        stop1.setAttribute("offset", "0%");
-        
-        let hexColor = "rgba(220, 38, 38, 0.25)";
-        if (ch.name.includes("OLX")) hexColor = "rgba(240, 100, 0, 0.25)";
-        else if (ch.name.includes("Facebook")) hexColor = "rgba(24, 119, 242, 0.25)";
-        else if (ch.name.includes("Instagram")) hexColor = "rgba(225, 48, 108, 0.25)";
-        
-        stop1.setAttribute("stop-color", hexColor);
-        grad.appendChild(stop1);
-
-        const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-        stop2.setAttribute("offset", "100%");
-        stop2.setAttribute("stop-color", "rgba(0, 0, 0, 0)");
-        grad.appendChild(stop2);
-        defs.appendChild(grad);
-    });
-    svg.appendChild(defs);
-
-    // Draw lines and areas
-    channels.forEach(ch => {
-        const points = [];
-        dates.forEach((d, idx) => {
+    const datasets = channels.map(ch => {
+        const data = dates.map(d => {
             const matches = campaigns.filter(c => c.date === d && c.channel === ch.name);
-            const totalLeadsOnDate = matches.reduce((sum, curr) => sum + curr.leads, 0);
-            points.push({ x: getX(idx), y: getY(totalLeadsOnDate), val: totalLeadsOnDate });
+            return matches.reduce((sum, curr) => sum + curr.leads, 0);
         });
+        return lineDataset(ch.name, data, ch.color);
+    });
 
-        let pathD = "";
-        points.forEach((p, idx) => {
-            if (idx === 0) pathD += `M ${p.x} ${p.y}`;
-            else {
-                const prev = points[idx - 1];
-                const cp1x = prev.x + (p.x - prev.x) / 3;
-                const cp2x = prev.x + 2 * (p.x - prev.x) / 3;
-                pathD += ` C ${cp1x} ${prev.y}, ${cp2x} ${p.y}, ${p.x} ${p.y}`;
-            }
-        });
-
-        if (points.length > 0) {
-            const first = points[0];
-            const last = points[points.length - 1];
-            const areaD = `${pathD} L ${last.x} ${getY(0)} L ${first.x} ${getY(0)} Z`;
-
-            const areaEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            areaEl.setAttribute("d", areaD);
-            areaEl.setAttribute("fill", `url(#${ch.gradientId})`);
-            svg.appendChild(areaEl);
-
-            const lineEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            lineEl.setAttribute("d", pathD);
-            lineEl.setAttribute("fill", "none");
-            lineEl.setAttribute("stroke", ch.color);
-            lineEl.setAttribute("stroke-width", "2.5");
-            lineEl.setAttribute("stroke-linecap", "round");
-            svg.appendChild(lineEl);
-
-            points.forEach(p => {
-                if (p.val > 0) {
-                    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                    dot.setAttribute("cx", p.x);
-                    dot.setAttribute("cy", p.y);
-                    dot.setAttribute("r", "4");
-                    dot.setAttribute("fill", ch.color);
-                    dot.setAttribute("stroke", "var(--bg-card)");
-                    dot.setAttribute("stroke-width", "1.5");
-                    
-                    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-                    title.textContent = `${ch.name}: ${p.val} leads`;
-                    dot.appendChild(title);
-
-                    svg.appendChild(dot);
+    if (chartInstances.performanceChart) chartInstances.performanceChart.destroy();
+    chartInstances.performanceChart = new Chart(canvas, {
+        type: "line",
+        data: { labels, datasets },
+        options: baseLineChartOptions({
+            tooltip: {
+                callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} leads`
                 }
-            });
-        }
+            }
+        })
     });
 }
 
@@ -1744,123 +1698,51 @@ function renderHistoryTrends() {
 
     const sorted = [...state.historico].sort((a, b) => new Date(a.data) - new Date(b.data));
 
-    plotTrendChart("chartBudgetTrend", sorted, 'verba_planejada_total', 'gasto_real_total_meta', 'var(--primary)', 'var(--fb-color)');
-    plotTrendChart("chartLeadsSalesTrend", sorted, 'vendas_total_mes', 'leads_total_mes', 'var(--success)', '#6366f1');
+    plotTrendChart("chartBudgetTrend", sorted,
+        [
+            { key: 'verba_planejada_total', label: 'Planejado (Estoque)', color: CHART_COLORS.primary },
+            { key: 'gasto_real_total_meta', label: 'Gasto Real (Meta)', color: CHART_COLORS.fb }
+        ],
+        { currency: true });
+
+    plotTrendChart("chartLeadsSalesTrend", sorted,
+        [
+            { key: 'vendas_total_mes', label: 'Vendas Realizadas', color: CHART_COLORS.success },
+            { key: 'leads_total_mes', label: 'Contatos Gerados', color: CHART_COLORS.indigo }
+        ],
+        { currency: false });
 }
 
-function plotTrendChart(svgId, data, key1, key2, color1, color2) {
-    const svg = document.getElementById(svgId);
-    if (!svg) return;
-    svg.innerHTML = "";
+// Plot a multi-series trend chart via Chart.js (History tab)
+function plotTrendChart(canvasId, data, series, opts = {}) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || typeof Chart === "undefined") return;
 
-    const width = 800;
-    const height = 200;
-    const paddingLeft = 60;
-    const paddingRight = 30;
-    const paddingTop = 20;
-    const paddingBottom = 30;
+    const labels = data.map(d => new Date(d.data + "T00:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+    const datasets = series.map(s => lineDataset(s.label, data.map(d => d[s.key]), s.color));
 
-    const chartWidth = width - paddingLeft - paddingRight;
-    const chartHeight = height - paddingTop - paddingBottom;
+    const isCurrency = !!opts.currency;
+    const fmtVal = (v) => isCurrency
+        ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+        : Number(v).toLocaleString('pt-BR');
 
-    let maxVal = 10;
-    data.forEach(d => {
-        if (d[key1] > maxVal) maxVal = d[key1];
-        if (d[key2] > maxVal) maxVal = d[key2];
-    });
-    maxVal = Math.ceil(maxVal / 10) * 10;
-
-    const getY = (val) => {
-        return paddingTop + chartHeight - (val / maxVal) * chartHeight;
-    };
-
-    const getX = (index) => {
-        return paddingLeft + (index / (data.length - 1)) * chartWidth;
-    };
-
-    // Draw Gridlines and Y labels
-    const gridCount = 4;
-    for (let i = 0; i <= gridCount; i++) {
-        const val = (maxVal / gridCount) * i;
-        const y = getY(val);
-
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", paddingLeft);
-        line.setAttribute("y1", y);
-        line.setAttribute("x2", width - paddingRight);
-        line.setAttribute("y2", y);
-        line.setAttribute("stroke", "rgba(255,255,255,0.03)");
-        line.setAttribute("stroke-dasharray", "4,4");
-        svg.appendChild(line);
-
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", paddingLeft - 10);
-        label.setAttribute("y", y + 4);
-        label.setAttribute("fill", "var(--text-muted)");
-        label.setAttribute("font-size", "10");
-        label.setAttribute("font-family", "var(--font-body)");
-        label.setAttribute("text-anchor", "end");
-        label.textContent = val >= 1000 ? `${(val/1000).toFixed(1)}k` : Math.round(val);
-        svg.appendChild(label);
-    }
-
-    // Draw dates
-    data.forEach((d, idx) => {
-        const x = getX(idx);
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", x);
-        label.setAttribute("y", height - 10);
-        label.setAttribute("fill", "var(--text-muted)");
-        label.setAttribute("font-size", "9");
-        label.setAttribute("font-family", "var(--font-body)");
-        label.setAttribute("text-anchor", "middle");
-        
-        const dateObj = new Date(d.data + "T00:00:00");
-        label.textContent = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        svg.appendChild(label);
-    });
-
-    const drawLine = (key, color) => {
-        let pathD = "";
-        const points = data.map((d, idx) => ({ x: getX(idx), y: getY(d[key]), val: d[key] }));
-        
-        points.forEach((p, idx) => {
-            if (idx === 0) pathD += `M ${p.x} ${p.y}`;
-            else {
-                const prev = points[idx - 1];
-                const cp1x = prev.x + (p.x - prev.x) / 3;
-                const cp2x = prev.x + 2 * (p.x - prev.x) / 3;
-                pathD += ` C ${cp1x} ${prev.y}, ${cp2x} ${p.y}, ${p.x} ${p.y}`;
+    if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+    chartInstances[canvasId] = new Chart(canvas, {
+        type: "line",
+        data: { labels, datasets },
+        options: baseLineChartOptions({
+            tooltip: {
+                callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${fmtVal(ctx.parsed.y)}`
+                }
+            },
+            yTicks: {
+                callback: (v) => isCurrency
+                    ? (v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`)
+                    : (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v)
             }
-        });
-
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", pathD);
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke", color);
-        path.setAttribute("stroke-width", "2.5");
-        path.setAttribute("stroke-linecap", "round");
-        svg.appendChild(path);
-
-        points.forEach(p => {
-            const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            dot.setAttribute("cx", p.x);
-            dot.setAttribute("cy", p.y);
-            dot.setAttribute("r", "3.5");
-            dot.setAttribute("fill", color);
-            dot.setAttribute("stroke", "var(--bg-card)");
-            dot.setAttribute("stroke-width", "1.5");
-            
-            const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-            title.textContent = p.val.toLocaleString('pt-BR');
-            dot.appendChild(title);
-
-            svg.appendChild(dot);
-        });
-    };
-
-    drawLine(key1, color1);
-    drawLine(key2, color2);
+        })
+    });
 }
 
 // Render "Ranking de Performance" comparison
