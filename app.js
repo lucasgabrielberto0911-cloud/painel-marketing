@@ -421,8 +421,7 @@ function switchTab(tabId) {
         ranking: "Ranking de Performance",
         "olx-manager": "Meus Carros (Plano OLX)",
         "olx-rotation": "Painel de Rotação OLX",
-        "meta-ads": "Campanhas (Meta Ads Live)",
-        "campaign-tracker": "Campanhas (Planilha Sheets)",
+        "meta-ads": "Campanhas",
         integrations: "Conexões de API & Planilhas",
         settings: "Configurações do Plano",
         "local-insights": "Insights de Mercado Regional (ES)"
@@ -2481,3 +2480,21 @@ function renderAlerts() {
         lucide.createIcons();
     }
 }
+
+// Toggle manual campaigns section under Settings tab
+window.toggleManualCampaignsSection = function() {
+    const content = document.getElementById("manual-campaigns-collapsible-content");
+    const icon = document.getElementById("manual-campaigns-toggle-icon");
+    const badge = document.getElementById("manual-campaigns-toggle-badge");
+    if (!content || !icon || !badge) return;
+
+    if (content.style.display === "none") {
+        content.style.display = "block";
+        icon.style.transform = "rotate(180deg)";
+        badge.innerText = "Recolher";
+    } else {
+        content.style.display = "none";
+        icon.style.transform = "rotate(0deg)";
+        badge.innerText = "Expandir";
+    }
+};

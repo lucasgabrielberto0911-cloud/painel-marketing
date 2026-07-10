@@ -60,13 +60,9 @@
                     <i data-lucide="dollar-sign"></i>
                     <span>Verba por Carro</span>
                 </a>
-                <a href="#campaign-tracker" class="nav-item" id="nav-campaign-tracker" onclick="switchTab('campaign-tracker')">
-                    <i data-lucide="trending-up"></i>
-                    <span>Campanhas (Planilha)</span>
-                </a>
                 <a href="#meta-ads" class="nav-item" id="nav-meta-ads" onclick="switchTab('meta-ads')">
                     <i data-lucide="facebook"></i>
-                    <span>Campanhas (Meta Ads)</span>
+                    <span>Campanhas</span>
                 </a>
                 <a href="#ranking" class="nav-item" id="nav-ranking" onclick="switchTab('ranking')">
                     <i data-lucide="trophy"></i>
@@ -539,78 +535,7 @@
                 </div>
             </section>
 
-            <!-- Tab Content: Campaign Tracker -->
-            <section id="tab-campaign-tracker" class="tab-content">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">
-                            <i data-lucide="dollar-sign"></i>
-                            <span>Gasto total</span>
-                        </div>
-                        <p class="stat-value num" id="camp-stat-gasto">R$ 0,00</p>
-                        <span class="stat-change neutral">Investimento total registrado</span>
-                    </div>
 
-                    <div class="stat-card">
-                        <div class="stat-label">
-                            <i data-lucide="users"></i>
-                            <span>Total de leads</span>
-                        </div>
-                        <p class="stat-value num" id="camp-stat-leads">0 contatos</p>
-                        <span class="stat-change neutral">Volume total acumulado</span>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-label">
-                            <i data-lucide="check"></i>
-                            <span>Vendas realizadas</span>
-                        </div>
-                        <p class="stat-value num" id="camp-stat-vendas">0 vendas</p>
-                        <span class="stat-change neutral">Conversões finais fechadas</span>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-label">
-                            <i data-lucide="percent"></i>
-                            <span>Taxa de conversão</span>
-                        </div>
-                        <p class="stat-value num" id="camp-stat-conversao">0,00%</p>
-                        <span class="stat-change neutral">Leads convertidos em vendas</span>
-                    </div>
-                </div>
-
-                <div class="dashboard-grid-1-2">
-                <!-- Full-Width Campaign History Table -->
-                <div class="dashboard-card glass">
-                    <div class="card-header">
-                        <div>
-                            <h2>Histórico de Desempenho Real</h2>
-                            <p class="card-subtitle">Registros consolidados de investimento e leads do estoque</p>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button class="btn btn-primary btn-sm" onclick="openCampaignModal()"><i data-lucide="plus"></i> Registrar Campanha</button>
-                            <button class="btn btn-outline btn-sm" onclick="clearCampaignHistory()">Limpar Histórico</button>
-                        </div>
-                    </div>
-                    <div class="card-body overflow-x">
-                        <table class="table" id="campaignTable">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Canal</th>
-                                    <th>Gasto</th>
-                                    <th>Leads</th>
-                                    <th>CPL</th>
-                                    <th>Vendas</th>
-                                </tr>
-                            </thead>
-                            <tbody id="campaignTableBody">
-                                <!-- Dynamic content -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
 
             <!-- Tab Content: Meta Ads Real-Time -->
             <section id="tab-meta-ads" class="tab-content">
@@ -842,6 +767,92 @@
                                     Salvar Configurações
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collapsible Manual Campaigns Section -->
+                <div class="dashboard-card glass" style="margin-top: 1.5rem;">
+                    <div class="card-header" style="cursor: pointer; user-select: none; border-bottom: none; margin-bottom: 0;" onclick="toggleManualCampaignsSection()">
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <h2 style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Registro manual de campanhas (opcional)</h2>
+                            <p class="card-subtitle" style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.4;">Use esta seção apenas se quiser registrar campanhas de canais sem integração automática (ex: ações offline, parcerias)</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="badge" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.72rem; cursor: pointer; padding: 0.2rem 0.45rem;" id="manual-campaigns-toggle-badge">Expandir</span>
+                            <i data-lucide="chevron-down" id="manual-campaigns-toggle-icon" style="transition: transform 0.25s; width: 16px; height: 16px;"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="manual-campaigns-collapsible-content" style="display: none; padding: 1.25rem; border-top: 1px solid var(--border-color); margin-top: 1rem;">
+                        <!-- Stats Grid -->
+                        <div class="stats-grid" style="margin-bottom: 1.5rem;">
+                            <div class="stat-card">
+                                <div class="stat-label">
+                                    <i data-lucide="dollar-sign"></i>
+                                    <span>Gasto total</span>
+                                </div>
+                                <p class="stat-value num" id="camp-stat-gasto">R$ 0,00</p>
+                                <span class="stat-change neutral">Investimento total registrado</span>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-label">
+                                    <i data-lucide="users"></i>
+                                    <span>Total de leads</span>
+                                </div>
+                                <p class="stat-value num" id="camp-stat-leads">0 contatos</p>
+                                <span class="stat-change neutral">Volume total acumulado</span>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-label">
+                                    <i data-lucide="check"></i>
+                                    <span>Vendas realizadas</span>
+                                </div>
+                                <p class="stat-value num" id="camp-stat-vendas">0 vendas</p>
+                                <span class="stat-change neutral">Conversões finais fechadas</span>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-label">
+                                    <i data-lucide="percent"></i>
+                                    <span>Taxa de conversão</span>
+                                </div>
+                                <p class="stat-value num" id="camp-stat-conversao">0,00%</p>
+                                <span class="stat-change neutral">Leads convertidos em vendas</span>
+                            </div>
+                        </div>
+
+                        <!-- Full-Width Campaign History Table -->
+                        <div class="dashboard-card glass" style="border: none; padding: 0; background: transparent; box-shadow: none;">
+                            <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: .75rem; margin-bottom: 1rem;">
+                                <div>
+                                    <h3 style="font-size: 0.9rem; font-weight: 600;">Histórico de Desempenho Real</h3>
+                                    <p class="card-subtitle">Registros consolidados de investimento e leads do estoque</p>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button class="btn btn-primary btn-sm" onclick="openCampaignModal()"><i data-lucide="plus"></i> Registrar Campanha</button>
+                                    <button class="btn btn-outline btn-sm" onclick="clearCampaignHistory()">Limpar Histórico</button>
+                                </div>
+                            </div>
+                            <div class="card-body overflow-x" style="padding: 0;">
+                                <table class="table" id="campaignTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Canal</th>
+                                            <th>Gasto</th>
+                                            <th>Leads</th>
+                                            <th>CPL</th>
+                                            <th>Vendas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="campaignTableBody">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
