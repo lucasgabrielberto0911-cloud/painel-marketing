@@ -3,7 +3,10 @@ let state = {
     region: 'all',
     inventory: [],
     campaigns: [],
-    historico: []
+    historico: [],
+    config: {
+        planoOlxMensal: 672.99
+    }
 };
 
 // Global Store for real-time fetched Meta insights
@@ -94,109 +97,112 @@ function showToast(message) {
 
 // App Initialization
 document.addEventListener("DOMContentLoaded", () => {
-    // Load local storage or use defaults
-    const storedInventory = localStorage.getItem("automarketing_inventory");
-    if (storedInventory) {
-        state.inventory = JSON.parse(storedInventory);
-    } else {
-        state.inventory = [...INITIAL_CARS];
-        saveInventoryToStorage();
-    }
-
-    const storedCampaigns = localStorage.getItem("automarketing_campaigns");
-    if (storedCampaigns) {
-        state.campaigns = JSON.parse(storedCampaigns);
-    } else {
-        state.campaigns = [...INITIAL_CAMPAIGNS];
-        saveCampaignsToStorage();
-    }
-
-    const storedHistorico = localStorage.getItem("automarketing_historico");
-    if (storedHistorico) {
-        state.historico = JSON.parse(storedHistorico);
-    }
-
-    // Load integration states from localStorage if they exist
-    const storedMetaToken = localStorage.getItem("suagaragem_meta_token");
-    if (storedMetaToken) {
-        const tokenInput = document.getElementById("meta-token");
-        if (tokenInput) tokenInput.value = storedMetaToken;
-        const badge = document.getElementById("badge-meta");
-        const btn = document.getElementById("btn-connect-meta");
-        if (badge && btn) {
-            badge.innerText = "Conectado";
-            badge.style.background = "rgba(16, 185, 129, 0.1)";
-            badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
-            badge.style.color = "var(--success)";
-            btn.innerText = "Desconectar";
-            btn.className = "btn btn-outline btn-sm";
-            btn.onclick = () => disconnectMockAPI('meta');
-        }
-    }
-
-    const storedSheetsUrl = localStorage.getItem("suagaragem_sheets_url");
-    if (storedSheetsUrl) {
-        const urlInput = document.getElementById("sheets-url");
-        if (urlInput) urlInput.value = storedSheetsUrl;
-        const badge = document.getElementById("badge-sheets");
-        const btn = document.getElementById("btn-connect-sheets");
-        if (badge && btn) {
-            badge.innerText = "Sincronizado";
-            badge.style.background = "rgba(16, 185, 129, 0.1)";
-            badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
-            badge.style.color = "var(--success)";
-            btn.innerText = "Desconectar";
-            btn.className = "btn btn-outline btn-sm";
-            btn.onclick = () => disconnectMockAPI('sheets');
+    // Load configuration first, then initialize the rest
+    fetchConfig().then(() => {
+        // Load local storage or use defaults
+        const storedInventory = localStorage.getItem("automarketing_inventory");
+        if (storedInventory) {
+            state.inventory = JSON.parse(storedInventory);
+        } else {
+            state.inventory = [...INITIAL_CARS];
+            saveInventoryToStorage();
         }
 
-        // Sincronismo inicial silencioso em background
-        Promise.all([
-            fetch('/api/sheets-read', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Estoque' })
-            }).then(res => res.json()),
-            fetch('/api/sheets-read', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Campanhas' })
-            }).then(res => res.json()),
-            fetch('/api/sheets-read', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Historico' })
-            }).then(res => res.json()).catch(() => ({ success: false }))
-        ])
-        .then(([resEstoque, resCampanhas, resHistorico]) => {
-            if (resEstoque.success && resCampanhas.success) {
-                processEstoqueData(resEstoque.data);
-                processCampanhaData(resCampanhas.data);
-                if (resHistorico && resHistorico.success) {
-                    processHistoricoData(resHistorico.data);
-                }
-                renderAll();
+        const storedCampaigns = localStorage.getItem("automarketing_campaigns");
+        if (storedCampaigns) {
+            state.campaigns = JSON.parse(storedCampaigns);
+        } else {
+            state.campaigns = [...INITIAL_CAMPAIGNS];
+            saveCampaignsToStorage();
+        }
+
+        const storedHistorico = localStorage.getItem("automarketing_historico");
+        if (storedHistorico) {
+            state.historico = JSON.parse(storedHistorico);
+        }
+
+        // Load integration states from localStorage if they exist
+        const storedMetaToken = localStorage.getItem("suagaragem_meta_token");
+        if (storedMetaToken) {
+            const tokenInput = document.getElementById("meta-token");
+            if (tokenInput) tokenInput.value = storedMetaToken;
+            const badge = document.getElementById("badge-meta");
+            const btn = document.getElementById("btn-connect-meta");
+            if (badge && btn) {
+                badge.innerText = "Conectado";
+                badge.style.background = "rgba(16, 185, 129, 0.1)";
+                badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
+                badge.style.color = "var(--success)";
+                btn.innerText = "Desconectar";
+                btn.className = "btn btn-outline btn-sm";
+                btn.onclick = () => disconnectMockAPI('meta');
             }
-        })
-        .catch(err => console.error("Erro no sincronismo inicial com as abas:", err));
-    }
+        }
 
-    // Debounced Search Event Listener (reduces rendering calls)
-    const searchInput = document.getElementById("kanbanSearch");
-    if (searchInput) {
-        searchInput.addEventListener("input", debounce(() => {
-            renderKanban();
-        }, 300));
-    }
+        const storedSheetsUrl = localStorage.getItem("suagaragem_sheets_url");
+        if (storedSheetsUrl) {
+            const urlInput = document.getElementById("sheets-url");
+            if (urlInput) urlInput.value = storedSheetsUrl;
+            const badge = document.getElementById("badge-sheets");
+            const btn = document.getElementById("btn-connect-sheets");
+            if (badge && btn) {
+                badge.innerText = "Sincronizado";
+                badge.style.background = "rgba(16, 185, 129, 0.1)";
+                badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
+                badge.style.color = "var(--success)";
+                btn.innerText = "Desconectar";
+                btn.className = "btn btn-outline btn-sm";
+                btn.onclick = () => disconnectMockAPI('sheets');
+            }
 
-    // Initialize Lucide Icons
-    lucide.createIcons();
+            // Sincronismo inicial silencioso em background
+            Promise.all([
+                fetch('/api/sheets-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Estoque' })
+                }).then(res => res.json()),
+                fetch('/api/sheets-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Campanhas' })
+                }).then(res => res.json()),
+                fetch('/api/sheets-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Historico' })
+                }).then(res => res.json()).catch(() => ({ success: false }))
+            ])
+            .then(([resEstoque, resCampanhas, resHistorico]) => {
+                if (resEstoque.success && resCampanhas.success) {
+                    processEstoqueData(resEstoque.data);
+                    processCampanhaData(resCampanhas.data);
+                    if (resHistorico && resHistorico.success) {
+                        processHistoricoData(resHistorico.data);
+                    }
+                    renderAll();
+                }
+            })
+            .catch(err => console.error("Erro no sincronismo inicial com as abas:", err));
+        }
 
-    // Set preview image for modal initial state
-    previewSelectedImage();
+        // Debounced Search Event Listener (reduces rendering calls)
+        const searchInput = document.getElementById("kanbanSearch");
+        if (searchInput) {
+            searchInput.addEventListener("input", debounce(() => {
+                renderKanban();
+            }, 300));
+        }
 
-    // Initial render
-    renderAll();
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Set preview image for modal initial state
+        previewSelectedImage();
+
+        // Initial render
+        renderAll();
+    });
 });
 
 // Save inventory to storage
@@ -227,7 +233,7 @@ function calcularDiasNaOlx(dataOlx) {
 // Calculate accumulated cost on OLX
 function calcularCustoAcumulado(custoOlx, diasNaOlx) {
     if (diasNaOlx === null || diasNaOlx === undefined) return 0;
-    const custo = custoOlx || 97.90;
+    const custo = custoOlx || (state.config.planoOlxMensal / 10);
     return (custo / 30) * diasNaOlx;
 }
 
@@ -270,7 +276,7 @@ function processEstoqueData(rows) {
             } else if (header === 'data_olx' || header === 'data olx' || header === 'data') {
                 car.data_olx = val.toString().trim();
             } else if (header === 'custo_olx' || header === 'custo olx' || header === 'custo') {
-                car.custo_olx = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 97.90;
+                car.custo_olx = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || (state.config.planoOlxMensal / 10);
             } else if (header === 'leads' || header === 'contatos') {
                 car.leads = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
             } else if (header === 'verba_mensal' || header === 'verba' || header === 'verba mensal') {
@@ -286,7 +292,7 @@ function processEstoqueData(rows) {
             car.status = car.status || 'stock';
             car.image = car.image || 'img_suv';
             car.hot = car.hot || false;
-            car.custo_olx = car.custo_olx !== undefined ? car.custo_olx : 97.90;
+            car.custo_olx = car.custo_olx !== undefined ? car.custo_olx : (state.config.planoOlxMensal / 10);
             car.leads = car.leads || 0;
             car.verba_mensal = car.verba_mensal || 0;
             newInventory.push(car);
@@ -418,6 +424,7 @@ function switchTab(tabId) {
         "meta-ads": "Campanhas (Meta Ads Live)",
         "campaign-tracker": "Campanhas (Planilha Sheets)",
         integrations: "Conexões de API & Planilhas",
+        settings: "Configurações do Plano",
         "local-insights": "Insights de Mercado Regional (ES)"
     };
     document.getElementById("main-title").innerText = titles[tabId] || "Sua Garagem Marketing";
@@ -434,6 +441,11 @@ function switchTab(tabId) {
         }
     } else if (tabId === 'history') {
         renderHistoryTrends();
+    } else if (tabId === 'settings') {
+        const settingsInput = document.getElementById("config-plano-olx");
+        if (settingsInput) {
+            settingsInput.value = state.config.planoOlxMensal.toFixed(2);
+        }
     }
 }
 
@@ -472,7 +484,7 @@ function renderStats() {
     // 3. Average Cost Per Lead (CPL) for active slots (Accumulated OLX plan cost / leads)
     const totalAccumulatedCusto = activeCars.reduce((sum, c) => {
         const dias = c.data_olx ? calcularDiasNaOlx(c.data_olx) : null;
-        const custo = c.custo_olx || 97.90;
+        const custo = c.custo_olx || (state.config.planoOlxMensal / 10);
         return sum + (dias !== null ? calcularCustoAcumulado(custo, dias) : 0);
     }, 0);
     const avgCPL = totalLeads > 0 ? (totalAccumulatedCusto / totalLeads) : 0;
@@ -797,7 +809,7 @@ function renderOLXRotation() {
         .filter(car => car.status === 'active')
         .map(car => {
             const dias = car.data_olx ? calcularDiasNaOlx(car.data_olx) : null;
-            const custo = car.custo_olx || 97.90;
+            const custo = car.custo_olx || (state.config.planoOlxMensal / 10);
             const custoAcumulado = dias !== null ? calcularCustoAcumulado(custo, dias) : 0;
             return {
                 ...car,
@@ -1881,7 +1893,7 @@ function renderRanking() {
     const carMetrics = activeCars.map(car => {
         // 1. CPL (Custo por Lead)
         const dias = car.data_olx ? calcularDiasNaOlx(car.data_olx) : null;
-        const custo = car.custo_olx || 97.90;
+        const custo = car.custo_olx || (state.config.planoOlxMensal / 10);
         const custoAcumulado = dias !== null ? (custo / 30) * dias : 0;
         const leads = car.leads || 0;
         const cpl = leads > 0 ? (custoAcumulado / leads) : null;
@@ -2120,9 +2132,10 @@ function connectMockAPI(type) {
 
                 localStorage.setItem("suagaragem_sheets_url", url);
                 
-                renderAll();
-                
-                showToast("Dados do Google Sheets sincronizados!");
+                fetchConfig().then(() => {
+                    renderAll();
+                    showToast("Dados do Google Sheets sincronizados!");
+                });
             })
             .catch(err => {
                 badge.innerText = "Erro";
@@ -2258,4 +2271,85 @@ function downloadXMLFeed() {
 // Global Move Car helper to easily allow dragging columns
 window.moveCar = function(index, targetStatus) {
     updateCarStatusSheets(index, targetStatus);
+};
+
+// Fetch configuration from Vercel config-read serverless function
+function fetchConfig() {
+    const sheetsUrl = localStorage.getItem("suagaragem_sheets_url") || "";
+    const url = `/api/config-read?spreadsheetUrl=${encodeURIComponent(sheetsUrl)}`;
+
+    return fetch(url)
+        .then(res => res.json())
+        .then(res => {
+            if (res.success && res.config && res.config.plano_olx_mensal !== undefined) {
+                state.config.planoOlxMensal = parseFloat(res.config.plano_olx_mensal) || 672.99;
+            } else {
+                state.config.planoOlxMensal = 672.99;
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao ler configuração do Sheets, usando fallback:", err);
+            state.config.planoOlxMensal = 672.99;
+        })
+        .finally(() => {
+            const settingsInput = document.getElementById("config-plano-olx");
+            if (settingsInput) {
+                settingsInput.value = state.config.planoOlxMensal.toFixed(2);
+            }
+        });
+}
+
+// Save configuration back to Google Sheets via config-write
+window.saveSettings = function(event) {
+    event.preventDefault();
+
+    const planoOlxInput = document.getElementById("config-plano-olx");
+    if (!planoOlxInput) return;
+
+    const valor = parseFloat(planoOlxInput.value);
+    if (isNaN(valor) || valor < 0) {
+        alert("Por favor, insira um valor numérico válido.");
+        return;
+    }
+
+    const sheetsUrl = localStorage.getItem("suagaragem_sheets_url");
+
+    if (sheetsUrl) {
+        const btn = document.getElementById("btn-save-settings");
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Salvando...`;
+
+        fetch('/api/config-write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                spreadsheetUrl: sheetsUrl,
+                chave: "plano_olx_mensal",
+                valor: valor
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                throw new Error(res.error || "Erro ao salvar configurações no Sheets.");
+            }
+            state.config.planoOlxMensal = valor;
+            renderAll();
+            showToast("Configurações salvas no Google Sheets!");
+        })
+        .catch(err => {
+            alert(`Falha ao salvar no Google Sheets:\n${err.message}`);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        });
+
+    } else {
+        // Fallback local
+        state.config.planoOlxMensal = valor;
+        renderAll();
+        showToast("Configurações salvas localmente!");
+    }
 };

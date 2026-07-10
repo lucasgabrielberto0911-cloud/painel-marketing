@@ -85,6 +85,10 @@
                     <i data-lucide="link"></i>
                     <span>Integrações & API</span>
                 </a>
+                <a href="#settings" class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+                    <i data-lucide="sliders"></i>
+                    <span>Configurações</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -778,6 +782,33 @@
                                 <i data-lucide="info" style="color: var(--primary) !important;"></i>
                                 <p>Ao arrastar um carro para a coluna "Ativos no Plano OLX" no Kanban, este feed é atualizado automaticamente em tempo real.</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Settings / Ajustes -->
+            <section id="tab-settings" class="tab-content">
+                <div class="dashboard-grid">
+                    <!-- Column 1: Configs Form -->
+                    <div class="dashboard-card glass" style="max-width: 550px;">
+                        <div class="card-header">
+                            <h2>Configurações do Plano OLX</h2>
+                            <i data-lucide="sliders" class="text-muted"></i>
+                        </div>
+                        <div class="card-body">
+                            <form id="settingsForm" onsubmit="saveSettings(event)">
+                                <div class="form-group" style="margin-bottom: 1.25rem;">
+                                    <label for="config-plano-olx">Valor Mensal do Plano OLX (R$)</label>
+                                    <p class="field-info" style="margin-bottom: 0.8rem; font-size: 0.78rem; line-height: 1.4;">
+                                        Este valor será utilizado para dividir o custo fixo do plano de forma igual entre os 10 slots de carros ativos.
+                                    </p>
+                                    <input type="number" id="config-plano-olx" step="0.01" min="0" required placeholder="Ex: 672.99" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="btn-save-settings">
+                                    Salvar Configurações
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
