@@ -550,7 +550,7 @@
                             <h2>Histórico de Desempenho Real</h2>
                             <p class="card-subtitle">Registros consolidados de investimento e leads do estoque</p>
                         </div>
-                        <div style="display: flex; gap: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button class="btn btn-primary btn-sm" onclick="openCampaignModal()"><i data-lucide="plus"></i> Registrar Campanha</button>
                             <button class="btn btn-outline btn-sm" onclick="clearCampaignHistory()">Limpar Histórico</button>
                         </div>
@@ -766,11 +766,11 @@
                             <div class="input-with-currency mt-2" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                                 <input type="text" id="olx-feed-url" readonly value="https://api.automarketing.com.br/feed/olx/linhares-vitoria.xml" style="color: var(--text-secondary); font-size: 0.82rem; width: 80%;">
                             </div>
-                            <div style="display: flex; gap: 0.5rem; width: 100%;">
-                                <button class="btn btn-primary btn-sm" onclick="openXMLModal()" style="flex: 1; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.76rem;">
+                            <div style="display: flex; gap: 0.5rem; width: 100%; flex-wrap: wrap;">
+                                <button class="btn btn-primary btn-sm" onclick="openXMLModal()" style="flex: 1; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.76rem; min-width: 140px;">
                                     <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Visualizar XML
                                 </button>
-                                <button class="btn btn-outline btn-sm" onclick="downloadXMLFeed()" style="flex: 1; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.76rem;">
+                                <button class="btn btn-outline btn-sm" onclick="downloadXMLFeed()" style="flex: 1; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.76rem; min-width: 140px;">
                                     <i data-lucide="download" style="width: 14px; height: 14px;"></i> Baixar XML
                                 </button>
                             </div>

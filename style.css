@@ -412,6 +412,7 @@ body {
     padding-bottom: .55rem;
     border-bottom: 1px solid var(--border-color);
     gap: .5rem;
+    flex-wrap: wrap;
 }
 .card-header h2 {
     font-family: var(--font-heading);
