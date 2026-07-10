@@ -58,7 +58,8 @@ export default async function handler(req, res) {
         rowData.hot ? 'Sim' : 'Não',
         rowData.data_olx || "",
         rowData.custo_olx !== undefined ? parseFloat(rowData.custo_olx) : "",
-        rowData.leads !== undefined ? parseInt(rowData.leads) : 0
+        rowData.leads !== undefined ? parseInt(rowData.leads) : 0,
+        rowData.verba_mensal !== undefined ? parseFloat(rowData.verba_mensal) : 0
     ];
 
     try {

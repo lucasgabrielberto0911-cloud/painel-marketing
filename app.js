@@ -1,24 +1,21 @@
 // State Management
 let state = {
     region: 'all',
-    totalBudget: 2000,
-    allocation: {
-        olx: 400,
-        fb: 600,
-        ig: 1000
-    },
     inventory: [],
     campaigns: []
 };
 
+// Global Store for real-time fetched Meta insights
+window.latestMetaInsights = [];
+
 // Initial Mock Data
 const INITIAL_CARS = [
-    { id: 1, model: "Jeep Renegade 1.8 Flex Automático", year: "2020/2020", price: 82000, km: 54000, status: "active", image: "img_suv", hot: true, data_olx: "2026-06-15", custo_olx: 97.90, leads: 12 },
-    { id: 2, model: "Chevrolet Onix 1.0 Turbo LTZ", year: "2021/2022", price: 74900, km: 38000, status: "active", image: "img_hatch", hot: false, data_olx: "2026-06-28", custo_olx: 97.90, leads: 6 },
-    { id: 3, model: "Toyota Hilux 2.8 D-4D Diesel SRX", year: "2019/2019", price: 189000, km: 92000, status: "stock", image: "img_pickup", hot: true, leads: 0 },
-    { id: 4, model: "Honda Civic 2.0 EXL Automático", year: "2018/2019", price: 98000, km: 71000, status: "stock", image: "img_sedan", hot: false, leads: 0 },
-    { id: 5, model: "Hyundai Creta 1.6 Pulse Plus", year: "2021/2021", price: 89900, km: 42000, status: "active", image: "img_suv", hot: false, data_olx: "2026-07-02", custo_olx: 97.90, leads: 8 },
-    { id: 6, model: "Fiat Strada 1.3 Firefly Volcano", year: "2022/2023", price: 92000, km: 23000, status: "sold", image: "img_pickup", hot: false, leads: 0 }
+    { id: 1, model: "Jeep Renegade 1.8 Flex Automático", year: "2020/2020", price: 82000, km: 54000, status: "active", image: "img_suv", hot: true, data_olx: "2026-06-15", custo_olx: 97.90, leads: 12, verba_mensal: 500 },
+    { id: 2, model: "Chevrolet Onix 1.0 Turbo LTZ", year: "2021/2022", price: 74900, km: 38000, status: "active", image: "img_hatch", hot: false, data_olx: "2026-06-28", custo_olx: 97.90, leads: 6, verba_mensal: 350 },
+    { id: 3, model: "Toyota Hilux 2.8 D-4D Diesel SRX", year: "2019/2019", price: 189000, km: 92000, status: "stock", image: "img_pickup", hot: true, leads: 0, verba_mensal: 600 },
+    { id: 4, model: "Honda Civic 2.0 EXL Automático", year: "2018/2019", price: 98000, km: 71000, status: "stock", image: "img_sedan", hot: false, leads: 0, verba_mensal: 400 },
+    { id: 5, model: "Hyundai Creta 1.6 Pulse Plus", year: "2021/2021", price: 89900, km: 42000, status: "active", image: "img_suv", hot: false, data_olx: "2026-07-02", custo_olx: 97.90, leads: 8, verba_mensal: 400 },
+    { id: 6, model: "Fiat Strada 1.3 Firefly Volcano", year: "2022/2023", price: 92000, km: 23000, status: "sold", image: "img_pickup", hot: false, leads: 0, verba_mensal: 300 }
 ];
 
 const INITIAL_CAMPAIGNS = [
@@ -48,13 +45,13 @@ const REGION_BENCHMARKS = {
     vitoria: {
         olx_cpl: 22.00,
         fb_cpl: 16.00,
-        ig_cpl: 13.50, // Instagram performa melhor/mais barato na Grande Vitória
+        ig_cpl: 13.50,
         tip: "<strong>Dica para Grande Vitória:</strong> Pessoas buscam agilidade. Campanhas de Instagram focadas em vídeos curtos mostrando detalhes internos (painel, teto solar, espaço) funcionam muito bem. Anuncie Onix, HB20 e SUVs médios."
     },
     linhares: {
-        olx_cpl: 18.00, // OLX mais barato na região norte para utilitários
-        fb_cpl: 13.00, // Facebook Marketplace orgânico e pago muito forte
-        ig_cpl: 18.00, // Instagram tem CPL ligeiramente maior
+        olx_cpl: 18.00,
+        fb_cpl: 13.00,
+        ig_cpl: 18.00,
         tip: "<strong>Dica para Linhares & Região Norte:</strong> O público de agro e comércio local valoriza picapes e carros para trabalho (Strada, Toro, Hilux). Anúncios na OLX com títulos detalhados de manutenção e pneus geram muitos leads."
     }
 };
@@ -262,6 +259,8 @@ function processEstoqueData(rows) {
                 car.custo_olx = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 97.90;
             } else if (header === 'leads' || header === 'contatos') {
                 car.leads = parseInt(val.toString().replace(/[^0-9]/g, '')) || 0;
+            } else if (header === 'verba_mensal' || header === 'verba' || header === 'verba mensal') {
+                car.verba_mensal = parseFloat(val.toString().replace(/[^0-9.]/g, '')) || 0;
             }
         });
 
@@ -275,6 +274,7 @@ function processEstoqueData(rows) {
             car.hot = car.hot || false;
             car.custo_olx = car.custo_olx !== undefined ? car.custo_olx : 97.90;
             car.leads = car.leads || 0;
+            car.verba_mensal = car.verba_mensal || 0;
             newInventory.push(car);
         }
     }
@@ -349,7 +349,7 @@ function switchTab(tabId) {
     // Update main header title contextually
     const titles = {
         overview: "Visão Geral do Marketing",
-        simulator: "Simulador de Verba",
+        simulator: "Verba Real por Carro",
         "olx-manager": "Gerenciador do Plano OLX",
         "olx-rotation": "Painel de Rotação OLX",
         "meta-ads": "Campanhas Meta Ads (Real-Time)",
@@ -359,9 +359,15 @@ function switchTab(tabId) {
     };
     document.getElementById("main-title").innerText = titles[tabId] || "Sua Garagem Marketing";
 
-    // Auto-fetch Meta Ads data on entering the tab
+    // Auto-fetch Meta Ads data on entering tabs
     if (tabId === 'meta-ads') {
         syncMetaAdsData(true);
+    } else if (tabId === 'simulator') {
+        if (!window.latestMetaInsights || window.latestMetaInsights.length === 0) {
+            syncMetaAdsData(true);
+        } else {
+            renderVerbaRealPorCarro();
+        }
     }
 }
 
@@ -376,60 +382,68 @@ function renderAll() {
     renderStats();
     renderDistributionBars();
     renderOLXOverviewSlots();
-    calculateBudgetSimulation(false); // Update simulator projections with current state budget
     renderPerformanceChart();
     renderKanban();
     renderOLXRotation();
     renderCampaignTable();
     updateTips();
+    renderVerbaRealPorCarro();
 }
 
 // Update Top Stats Card
 function renderStats() {
-    // 1. Budget
-    document.getElementById("stat-budget").innerText = `R$ ${state.totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // 1. Budget: Planned Budget of active OLX inventory (sum of verba_mensal)
+    const activeCars = state.inventory.filter(car => car.status === 'active');
+    const totalPlanned = activeCars.reduce((sum, c) => sum + (c.verba_mensal || 0), 0);
+    document.getElementById("stat-budget").innerText = totalPlanned.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    // 2. Projected Leads & CPL based on region metrics and current allocation
-    const benchmarks = REGION_BENCHMARKS[state.region];
-    
-    const olxLeads = state.allocation.olx / benchmarks.olx_cpl;
-    const fbLeads = state.allocation.fb / benchmarks.fb_cpl;
-    const igLeads = state.allocation.ig / benchmarks.ig_cpl;
-    const totalLeads = Math.round(olxLeads + fbLeads + igLeads);
-    
+    // 2. Real Leads of active OLX inventory
+    const totalLeads = activeCars.reduce((sum, c) => sum + (c.leads || 0), 0);
     document.getElementById("stat-leads").innerText = totalLeads;
     
-    const avgCPL = totalLeads > 0 ? (state.totalBudget / totalLeads) : 0;
-    document.getElementById("stat-cpl").innerText = `R$ ${avgCPL.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // 3. Average Cost Per Lead (CPL) for active slots (Accumulated OLX plan cost / leads)
+    const totalAccumulatedCusto = activeCars.reduce((sum, c) => {
+        const dias = c.data_olx ? calcularDiasNaOlx(c.data_olx) : null;
+        const custo = c.custo_olx || 97.90;
+        return sum + (dias !== null ? calcularCustoAcumulado(custo, dias) : 0);
+    }, 0);
+    const avgCPL = totalLeads > 0 ? (totalAccumulatedCusto / totalLeads) : 0;
+    document.getElementById("stat-cpl").innerText = avgCPL > 0 
+        ? avgCPL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+        : "—";
 
-    // 3. OLX Filling Status
-    const activeOLXCount = state.inventory.filter(car => car.status === 'active').length;
-    document.getElementById("stat-olx-fill").innerText = `${activeOLXCount} / 10`;
+    // 4. OLX Filling Status
+    document.getElementById("stat-olx-fill").innerText = `${activeCars.length} / 10`;
 
     const badge = document.getElementById("stat-olx-badge");
-    if (activeOLXCount > 10) {
+    if (activeCars.length > 10) {
         badge.innerText = "Limite Excedido!";
         badge.className = "stat-change negative";
-    } else if (activeOLXCount === 10) {
+    } else if (activeCars.length === 10) {
         badge.innerText = "Plano 100% Preenchido";
         badge.className = "stat-change positive";
     } else {
-        badge.innerText = `${10 - activeOLXCount} slots disponíveis`;
+        badge.innerText = `${10 - activeCars.length} slots disponíveis`;
         badge.className = "stat-change neutral";
     }
 }
 
-// Render Overview Budget Bars
+// Render Overview Real Spend Distribution by Channel
 function renderDistributionBars() {
-    const total = state.totalBudget;
-    const olxPct = total > 0 ? Math.round((state.allocation.olx / total) * 100) : 0;
-    const fbPct = total > 0 ? Math.round((state.allocation.fb / total) * 100) : 0;
-    const igPct = total > 0 ? Math.round((state.allocation.ig / total) * 100) : 0;
+    // Real spent by channel from campaign history
+    const olxSpent = state.campaigns.filter(c => c.channel === 'OLX').reduce((sum, c) => sum + c.spent, 0);
+    const fbSpent = state.campaigns.filter(c => c.channel === 'Facebook Marketplace').reduce((sum, c) => sum + c.spent, 0);
+    const igSpent = state.campaigns.filter(c => c.channel === 'Instagram Ads').reduce((sum, c) => sum + c.spent, 0);
+    const total = olxSpent + fbSpent + igSpent;
+
+    const olxPct = total > 0 ? Math.round((olxSpent / total) * 100) : 0;
+    const fbPct = total > 0 ? Math.round((fbSpent / total) * 100) : 0;
+    const igPct = total > 0 ? Math.round((igSpent / total) * 100) : 0;
 
     // Update Label texts
-    document.getElementById("dist-val-olx").innerText = `R$ ${state.allocation.olx} (${olxPct}%)`;
-    document.getElementById("dist-val-fb").innerText = `R$ ${state.allocation.fb} (${fbPct}%)`;
-    document.getElementById("dist-val-ig").innerText = `R$ ${state.allocation.ig} (${igPct}%)`;
+    document.getElementById("dist-val-olx").innerText = `R$ ${olxSpent.toFixed(2)} (${olxPct}%)`;
+    document.getElementById("dist-val-fb").innerText = `R$ ${fbSpent.toFixed(2)} (${fbPct}%)`;
+    document.getElementById("dist-val-ig").innerText = `R$ ${igSpent.toFixed(2)} (${igPct}%)`;
 
     // Update Progress Bars
     document.getElementById("pb-olx").style.width = `${olxPct}%`;
@@ -471,79 +485,6 @@ function updateTips() {
     if (tipText) tipText.innerHTML = benchmarks.tip;
 }
 
-// Budget Simulation Calculators
-function calculateBudgetSimulation(isManualInput = false) {
-    const rangeSlider = document.getElementById("totalBudgetRange");
-    if (!rangeSlider) return;
-    
-    const inputOlx = document.getElementById("sim-olx");
-    const inputFb = document.getElementById("sim-fb");
-    const inputIg = document.getElementById("sim-ig");
-
-    if (!isManualInput) {
-        // Range slider changed, update allocation automatically (OLX fixo + remaining split)
-        state.totalBudget = parseInt(rangeSlider.value);
-        document.getElementById("budgetRangeValue").innerText = `R$ ${state.totalBudget.toLocaleString('pt-BR')}`;
-        
-        // Fixed OLX cost default R$ 400 (minimum 300)
-        state.allocation.olx = Math.min(400, Math.round(state.totalBudget * 0.2));
-        if (state.allocation.olx < 300) state.allocation.olx = 300;
-        
-        const remaining = state.totalBudget - state.allocation.olx;
-        // Split remaining: 60% Instagram, 40% Facebook Marketplace Ads
-        state.allocation.ig = Math.round(remaining * 0.6);
-        state.allocation.fb = remaining - state.allocation.ig;
-
-        // Update input values on page
-        if (inputOlx) inputOlx.value = state.allocation.olx;
-        if (inputFb) inputFb.value = state.allocation.fb;
-        if (inputIg) inputIg.value = state.allocation.ig;
-    } else {
-        // Manual numeric input changed, sum total budget
-        state.allocation.olx = parseInt(inputOlx.value) || 0;
-        state.allocation.fb = parseInt(inputFb.value) || 0;
-        state.allocation.ig = parseInt(inputIg.value) || 0;
-
-        state.totalBudget = state.allocation.olx + state.allocation.fb + state.allocation.ig;
-        rangeSlider.value = state.totalBudget;
-        document.getElementById("budgetRangeValue").innerText = `R$ ${state.totalBudget.toLocaleString('pt-BR')}`;
-    }
-
-    // Recalculate projections on Simulator view
-    const benchmarks = REGION_BENCHMARKS[state.region];
-
-    // OLX projections
-    const olxLeads = state.allocation.olx / benchmarks.olx_cpl;
-    const projOlxLeads = document.getElementById("proj-olx-leads");
-    const projOlxCpl = document.getElementById("proj-olx-cpl");
-    if (projOlxLeads) projOlxLeads.innerText = Math.round(olxLeads);
-    if (projOlxCpl) projOlxCpl.innerText = `R$ ${benchmarks.olx_cpl.toFixed(2)}`;
-
-    // Facebook Marketplace projections
-    const fbLeads = state.allocation.fb / benchmarks.fb_cpl;
-    const projFbLeads = document.getElementById("proj-fb-leads");
-    const projFbCpl = document.getElementById("proj-fb-cpl");
-    if (projFbLeads) projFbLeads.innerText = Math.round(fbLeads);
-    if (projFbCpl) projFbCpl.innerText = `R$ ${benchmarks.fb_cpl.toFixed(2)}`;
-
-    // Instagram projections
-    const igLeads = state.allocation.ig / benchmarks.ig_cpl;
-    const projIgLeads = document.getElementById("proj-ig-leads");
-    const projIgCpl = document.getElementById("proj-ig-cpl");
-    if (projIgLeads) projIgLeads.innerText = Math.round(igLeads);
-    if (projIgCpl) projIgCpl.innerText = `R$ ${benchmarks.ig_cpl.toFixed(2)}`;
-
-    // Update main stats summary as well since total budget modified
-    document.getElementById("stat-budget").innerText = `R$ ${state.totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-    const totalLeads = Math.round(olxLeads + fbLeads + igLeads);
-    document.getElementById("stat-leads").innerText = totalLeads;
-    const avgCPL = totalLeads > 0 ? (state.totalBudget / totalLeads) : 0;
-    document.getElementById("stat-cpl").innerText = `R$ ${avgCPL.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-    // Render distribution visual bars
-    renderDistributionBars();
-}
-
 // Draw dynamic SVG Performance Chart on Overview Tab
 function renderPerformanceChart() {
     const svg = document.getElementById("performanceChart");
@@ -562,7 +503,6 @@ function renderPerformanceChart() {
     // Get unique dates
     const dates = [...new Set(campaigns.map(c => c.date))];
     if (dates.length < 2) {
-        // Add a mock start point if there's only 1 date to make it draw a line
         const dateObj = new Date(dates[0]);
         dateObj.setDate(dateObj.getDate() - 5);
         dates.unshift(dateObj.toISOString().split('T')[0]);
@@ -573,7 +513,7 @@ function renderPerformanceChart() {
     campaigns.forEach(c => {
         if (c.leads > maxLeads) maxLeads = c.leads;
     });
-    maxLeads = Math.ceil(maxLeads / 10) * 10; // round up to multiple of 10
+    maxLeads = Math.ceil(maxLeads / 10) * 10;
 
     const width = 800;
     const height = 200;
@@ -585,12 +525,10 @@ function renderPerformanceChart() {
     const chartWidth = width - paddingLeft - paddingRight;
     const chartHeight = height - paddingTop - paddingBottom;
 
-    // Helper to get Y coordinate for a lead value
     const getY = (val) => {
         return paddingTop + chartHeight - (val / maxLeads) * chartHeight;
     };
 
-    // Helper to get X coordinate for date index
     const getX = (index) => {
         return paddingLeft + (index / (dates.length - 1)) * chartWidth;
     };
@@ -601,7 +539,6 @@ function renderPerformanceChart() {
         const val = (maxLeads / gridLinesCount) * i;
         const y = getY(val);
 
-        // Line
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
         line.setAttribute("x1", paddingLeft);
         line.setAttribute("y1", y);
@@ -611,7 +548,6 @@ function renderPerformanceChart() {
         line.setAttribute("stroke-dasharray", "4,4");
         svg.appendChild(line);
 
-        // Text label
         const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
         label.setAttribute("x", paddingLeft - 10);
         label.setAttribute("y", y + 4);
@@ -623,7 +559,7 @@ function renderPerformanceChart() {
         svg.appendChild(label);
     }
 
-    // Draw X Labels (Dates)
+    // Draw X Labels
     dates.forEach((d, idx) => {
         const x = getX(idx);
         const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -639,7 +575,6 @@ function renderPerformanceChart() {
         svg.appendChild(label);
     });
 
-    // Channels configuration
     const channels = [
         { name: "OLX", color: "var(--olx-color)", gradientId: "grad-olx" },
         { name: "Facebook Marketplace", color: "var(--fb-color)", gradientId: "grad-fb" },
@@ -684,7 +619,6 @@ function renderPerformanceChart() {
             points.push({ x: getX(idx), y: getY(totalLeadsOnDate), val: totalLeadsOnDate });
         });
 
-        // Generate line path
         let pathD = "";
         points.forEach((p, idx) => {
             if (idx === 0) pathD += `M ${p.x} ${p.y}`;
@@ -696,19 +630,16 @@ function renderPerformanceChart() {
             }
         });
 
-        // Area path (close it to bottom)
         if (points.length > 0) {
             const first = points[0];
             const last = points[points.length - 1];
             const areaD = `${pathD} L ${last.x} ${getY(0)} L ${first.x} ${getY(0)} Z`;
 
-            // Draw Area
             const areaEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
             areaEl.setAttribute("d", areaD);
             areaEl.setAttribute("fill", `url(#${ch.gradientId})`);
             svg.appendChild(areaEl);
 
-            // Draw Line
             const lineEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
             lineEl.setAttribute("d", pathD);
             lineEl.setAttribute("fill", "none");
@@ -717,7 +648,6 @@ function renderPerformanceChart() {
             lineEl.setAttribute("stroke-linecap", "round");
             svg.appendChild(lineEl);
 
-            // Draw Dots
             points.forEach(p => {
                 if (p.val > 0) {
                     const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -739,7 +669,7 @@ function renderPerformanceChart() {
     });
 }
 
-// KANBAN SYSTEM (OLX 10 CAR PLANNERS)
+// KANBAN SYSTEM
 function renderKanban() {
     const stockContainer = document.getElementById("cards-stock");
     const activeContainer = document.getElementById("cards-active");
@@ -759,7 +689,6 @@ function renderKanban() {
     let soldCount = 0;
 
     state.inventory.forEach((car, index) => {
-        // Apply Search and Category/Type filters
         const matchesQuery = car.model.toLowerCase().includes(query) || car.year.includes(query) || car.price.toString().includes(query);
         const matchesType = typeFilter === "all" || car.image === typeFilter;
 
@@ -781,12 +710,10 @@ function renderKanban() {
         }
     });
 
-    // Update column counters
     document.getElementById("count-stock").innerText = stockCount;
     document.getElementById("count-active").innerText = `${activeCount} / 10`;
     document.getElementById("count-sold").innerText = soldCount;
 
-    // Active limit warning check
     const warningBanner = document.getElementById("olx-limit-alert");
     const badgeActive = document.getElementById("count-active");
 
@@ -805,7 +732,6 @@ function renderOLXRotation() {
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    // Filtra os carros ativos mapeando seu índice original
     const calculatedCars = state.inventory
         .map((car, index) => ({ ...car, originalIndex: index }))
         .filter(car => car.status === 'active')
@@ -820,7 +746,6 @@ function renderOLXRotation() {
             };
         });
 
-    // Ordenar do com MAIS dias para o com MENOS dias (nulos por último)
     calculatedCars.sort((a, b) => {
         if (a.dias === null && b.dias === null) return 0;
         if (a.dias === null) return 1;
@@ -847,7 +772,6 @@ function renderOLXRotation() {
         
         const carLeads = car.leads || 0;
         
-        // Custo por Lead (CPL) individual do carro na OLX (custo acumulado / leads)
         const cplVaga = (car.dias !== null && carLeads > 0) ? (car.custoAcumulado / carLeads) : null;
         const formattedCplVaga = cplVaga !== null ? cplVaga.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : "—";
         
@@ -879,7 +803,6 @@ function renderOLXRotation() {
         tbody.appendChild(tr);
     });
 
-    // Atualizar sumários no topo da aba de rotação
     const totalOcupadas = calculatedCars.length;
     document.getElementById("rot-stat-vagas").innerText = `${totalOcupadas} / 10`;
     document.getElementById("rot-stat-custo-total").innerText = totalCustoAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -893,7 +816,6 @@ function renderOLXRotation() {
         }
     }
 
-    // Refresh icons inside table buttons
     setTimeout(() => {
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
@@ -912,7 +834,6 @@ function createCarCard(car, index) {
     const formattedKm = car.km.toLocaleString('pt-BR');
     const imagePath = IMAGE_MAP[car.image] || IMAGE_MAP.img_suv;
 
-    // Controls depending on column status
     let actionButtons = "";
     if (car.status === "stock") {
         actionButtons = `
@@ -966,7 +887,6 @@ function createCarCard(car, index) {
         </div>
     `;
 
-    // Instantiate newly created icons in the card
     setTimeout(() => {
         if (typeof lucide !== 'undefined') {
             lucide.createIcons({
@@ -986,7 +906,6 @@ function drag(ev, index) {
     ev.dataTransfer.setData("text/plain", index);
 }
 
-// Drop validation rules
 function allowDrop(ev) {
     ev.preventDefault();
 }
@@ -1021,6 +940,7 @@ function openAddCarModal() {
     document.getElementById("carIndex").value = "";
     document.getElementById("car-data-olx").value = "";
     document.getElementById("car-custo-olx").value = "";
+    document.getElementById("car-verba-mensal").value = "";
     previewSelectedImage();
     
     document.getElementById("carModal").classList.add("active");
@@ -1041,6 +961,7 @@ function editCar(index) {
     document.getElementById("car-hot").checked = car.hot;
     document.getElementById("car-data-olx").value = car.data_olx || "";
     document.getElementById("car-custo-olx").value = car.custo_olx || "";
+    document.getElementById("car-verba-mensal").value = car.verba_mensal || "";
 
     previewSelectedImage();
     document.getElementById("carModal").classList.add("active");
@@ -1077,6 +998,8 @@ function handleCarFormSubmit(event) {
     const data_olx = document.getElementById("car-data-olx").value;
     const custo_olx_val = document.getElementById("car-custo-olx").value;
     const custo_olx = custo_olx_val !== "" ? parseFloat(custo_olx_val) : "";
+    const verba_mensal_val = document.getElementById("car-verba-mensal").value;
+    const verba_mensal = verba_mensal_val !== "" ? parseFloat(verba_mensal_val) : 0;
 
     const rowData = {
         modelo: model,
@@ -1088,13 +1011,13 @@ function handleCarFormSubmit(event) {
         hot: hot,
         data_olx: data_olx || "",
         custo_olx: custo_olx !== "" ? custo_olx : "",
-        leads: indexVal !== "" ? (state.inventory[parseInt(indexVal)].leads || 0) : 0
+        leads: indexVal !== "" ? (state.inventory[parseInt(indexVal)].leads || 0) : 0,
+        verba_mensal: verba_mensal
     };
 
     const sheetsUrl = localStorage.getItem("suagaragem_sheets_url");
 
     if (sheetsUrl) {
-        // Exibir spinner no botão salvar do modal
         const submitBtn = document.querySelector("#carForm button[type='submit']");
         const originalHtml = submitBtn.innerHTML;
         submitBtn.disabled = true;
@@ -1123,7 +1046,6 @@ function handleCarFormSubmit(event) {
             showToast("Carro salvo com sucesso no Google Sheets!");
             closeCarModal();
 
-            // Recarregar os dados do Sheets
             connectMockAPI('sheets');
         })
         .catch(err => {
@@ -1133,7 +1055,6 @@ function handleCarFormSubmit(event) {
         });
 
     } else {
-        // Fallback local caso não tenha planilha conectada
         const carData = { 
             model, 
             year, 
@@ -1144,7 +1065,8 @@ function handleCarFormSubmit(event) {
             hot, 
             data_olx: data_olx || "", 
             custo_olx: custo_olx !== "" ? custo_olx : "", 
-            leads: indexVal !== "" ? (state.inventory[parseInt(indexVal)].leads || 0) : 0 
+            leads: indexVal !== "" ? (state.inventory[parseInt(indexVal)].leads || 0) : 0,
+            verba_mensal: verba_mensal
         };
 
         if (indexVal === "") {
@@ -1179,7 +1101,6 @@ function updateCarStatusSheets(index, targetStatus) {
     const sheetsUrl = localStorage.getItem("suagaragem_sheets_url");
 
     if (!sheetsUrl) {
-        // Fallback local
         car.status = targetStatus;
         saveInventoryToStorage();
         renderAll();
@@ -1197,10 +1118,10 @@ function updateCarStatusSheets(index, targetStatus) {
         hot: car.hot,
         data_olx: car.data_olx || "",
         custo_olx: car.custo_olx !== undefined ? car.custo_olx : "",
-        leads: car.leads || 0
+        leads: car.leads || 0,
+        verba_mensal: car.verba_mensal || 0
     };
 
-    // Mudar localmente primeiro para resposta visual imediata no Kanban
     const originalStatus = car.status;
     car.status = targetStatus;
     renderAll();
@@ -1225,7 +1146,6 @@ function updateCarStatusSheets(index, targetStatus) {
         showToast("Status atualizado no Google Sheets com sucesso!");
     })
     .catch(err => {
-        // Rollback se falhar
         car.status = originalStatus;
         renderAll();
         alert(`Falha ao salvar alteração no Google Sheets:\n${err.message}`);
@@ -1253,7 +1173,6 @@ function renderCampaignTable() {
     let totalLeads = 0;
     let totalSales = 0;
 
-    // Sort campaigns by date descending
     const sorted = [...state.campaigns].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     sorted.forEach(camp => {
@@ -1276,7 +1195,6 @@ function renderCampaignTable() {
         tbody.appendChild(row);
     });
 
-    // Update Campaign Summary Cards
     const gastoContainer = document.getElementById("camp-stat-gasto");
     const leadsContainer = document.getElementById("camp-stat-leads");
     const vendasContainer = document.getElementById("camp-stat-vendas");
@@ -1328,11 +1246,6 @@ function syncMetaAdsData(silent = false) {
     if (!silent) {
         if (loadingSkeleton) loadingSkeleton.style.display = "block";
         if (tableWrapper) tableWrapper.style.display = "none";
-    } else {
-        // Silent loader if skeleton not yet shown
-        if (loadingSkeleton && loadingSkeleton.style.display !== "block" && tableWrapper.style.display === "none") {
-            loadingSkeleton.style.display = "block";
-        }
     }
 
     if (syncBtn) {
@@ -1352,7 +1265,11 @@ function syncMetaAdsData(silent = false) {
             throw new Error(resIns.error || "Falha ao obter dados de insights do Meta Ads.");
         }
 
+        // Store insights globally for other cross reference panels
+        window.latestMetaInsights = resIns.data || [];
+
         renderMetaAdsTable(resCamp.data, resIns.data);
+        renderVerbaRealPorCarro();
 
         if (loadingSkeleton) loadingSkeleton.style.display = "none";
         if (tableWrapper) tableWrapper.style.display = "block";
@@ -1388,7 +1305,6 @@ function renderMetaAdsTable(campaigns, insights) {
     }
 
     campaigns.forEach(camp => {
-        // Status mapping
         const statusRaw = (camp.status || "").toUpperCase().trim();
         let statusText = "Pausada";
         let statusBadgeClass = "style='color: var(--primary-light) !important; background: rgba(220, 38, 38, 0.08) !important; border-color: rgba(220, 38, 38, 0.2) !important;'";
@@ -1398,14 +1314,12 @@ function renderMetaAdsTable(campaigns, insights) {
             statusBadgeClass = "style='color: var(--success) !important; background: var(--success-bg) !important; border-color: rgba(22, 163, 74, 0.2) !important;'";
         }
 
-        // Daily budget formatting
         let budgetText = "—";
         if (camp.daily_budget) {
-            const budgetVal = parseFloat(camp.daily_budget) / 100; // Meta values are in cents
+            const budgetVal = parseFloat(camp.daily_budget) / 100;
             budgetText = budgetVal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        // Search in insights (cross reference by name matching)
         const matched = insights.find(ins => ins.campaign_name === camp.name);
 
         let spentText = "Sem dados no período";
@@ -1444,6 +1358,98 @@ function renderMetaAdsTable(campaigns, insights) {
     });
 }
 
+// Model & Campaign Cross-Reference Engine
+function matchModelWithCampaign(carModel, campaignName) {
+    if (!carModel || !campaignName) return false;
+    const modelClean = carModel.toLowerCase();
+    const campClean = campaignName.toLowerCase();
+    
+    // Words to exclude when doing matching (common terms)
+    const excludeWords = ['flex', 'automático', 'automatico', 'diesel', 'manual', 'turbo', 'd-4d', 'srx', 'ltz', 'plus', 'volcano', 'firefly', '1.0', '1.6', '1.8', '2.0', '2.8', '4x4', 'veículos', 'veiculo', 'carro'];
+    
+    const words = modelClean.split(/[\s,./-]+/)
+        .filter(w => w.length >= 3 && !excludeWords.includes(w));
+    
+    if (words.length === 0) return false;
+
+    // Check if any keyword of the model appears in the Meta campaign name
+    return words.some(word => campClean.includes(word));
+}
+
+// Render "Verba Real por Carro" Comparison Dashboard
+function renderVerbaRealPorCarro() {
+    const tbody = document.getElementById("verbaCarroTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const activeCars = state.inventory.filter(car => car.status === 'active');
+    const insightsList = window.latestMetaInsights || [];
+
+    let totalPlanned = 0;
+    let totalRealGasto = 0;
+
+    if (activeCars.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum carro ativo na OLX no momento. Ative carros no Kanban para planejar verbas.</td></tr>`;
+        return;
+    }
+
+    activeCars.forEach(car => {
+        const planned = car.verba_mensal || 0;
+        totalPlanned += planned;
+
+        // Sum matching Meta campaigns spend
+        const matchingCampaigns = insightsList.filter(ins => matchModelWithCampaign(car.model, ins.campaign_name));
+        const hasCampaign = matchingCampaigns.length > 0;
+        
+        let realGasto = 0;
+        if (hasCampaign) {
+            realGasto = matchingCampaigns.reduce((sum, ins) => sum + (parseFloat(ins.spend) || 0), 0);
+            totalRealGasto += realGasto;
+        }
+
+        const diff = planned - realGasto;
+        
+        const formattedPlanned = planned.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const formattedReal = hasCampaign 
+            ? realGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : `<span style="color: var(--text-muted); font-style: italic; font-size: 0.78rem;">Nenhuma campanha Meta encontrada para este carro</span>`;
+        
+        const formattedDiff = diff.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const diffClass = diff >= 0 ? 'text-success' : 'text-danger';
+
+        const matchCountText = hasCampaign 
+            ? `<span class="badge" style="color: var(--success) !important; background: var(--success-bg) !important; border-color: rgba(22, 163, 74, 0.2) !important;">${matchingCampaigns.length} campanha(s)</span>`
+            : `<span class="badge badge-alert">Sem anúncios</span>`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><strong>${car.model}</strong></td>
+            <td>${formattedPlanned}</td>
+            <td>${formattedReal}</td>
+            <td class="${diffClass}"><strong>${formattedDiff}</strong></td>
+            <td>${matchCountText}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Update global summaries on tab cards
+    document.getElementById("verba-stat-planejado").innerText = totalPlanned.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById("verba-stat-gasto-real").innerText = totalRealGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    const totalDiff = totalPlanned - totalRealGasto;
+    const saldoEl = document.getElementById("verba-stat-saldo");
+    saldoEl.innerText = totalDiff.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    const saldoSub = document.getElementById("verba-stat-saldo-sub");
+    if (totalDiff >= 0) {
+        saldoEl.style.color = "var(--success)";
+        saldoSub.innerHTML = `<span class="text-success">Dentro da verba planejada</span>`;
+    } else {
+        saldoEl.style.color = "var(--primary-light)";
+        saldoSub.innerHTML = `<span class="text-danger">Orçamento global estourado</span>`;
+    }
+}
+
 // Integration Real API System (Google Sheets Live Auth & Read)
 function connectMockAPI(type) {
     if (type === 'meta') {
@@ -1470,7 +1476,6 @@ function connectMockAPI(type) {
             btn.className = "btn btn-outline btn-sm";
             btn.onclick = () => disconnectMockAPI('meta');
             
-            // Persist locally
             localStorage.setItem("suagaragem_meta_token", token);
             
             alert("Meta Ads integrado com sucesso! Campanhas e Leads serão sincronizados em tempo real.");
@@ -1488,7 +1493,6 @@ function connectMockAPI(type) {
         btn.innerHTML = `<span class="spinner"></span> Sincronizando...`;
         btn.disabled = true;
 
-        // Disparar requisições em paralelo para as abas "Estoque" e "Campanhas"
         const fetchEstoque = fetch('/api/sheets-read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1510,11 +1514,9 @@ function connectMockAPI(type) {
                     throw new Error(`Aba 'Campanhas': ${resCampanhas.error}`);
                 }
 
-                // Processar e salvar os dados de ambas as abas
                 processEstoqueData(resEstoque.data);
                 processCampanhaData(resCampanhas.data);
 
-                // Configurar interface como integrada e com sucesso
                 badge.innerText = "Sincronizado";
                 badge.style.background = "rgba(16, 185, 129, 0.1)";
                 badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
@@ -1525,16 +1527,13 @@ function connectMockAPI(type) {
                 btn.className = "btn btn-outline btn-sm";
                 btn.onclick = () => disconnectMockAPI('sheets');
 
-                // Persistir localmente a URL
                 localStorage.setItem("suagaragem_sheets_url", url);
                 
-                // Forçar renderização geral dos dados sincronizados
                 renderAll();
                 
                 showToast("Dados do Google Sheets sincronizados!");
             })
             .catch(err => {
-                // Restaurar interface com estado de erro
                 badge.innerText = "Erro";
                 badge.style.background = "rgba(229, 9, 20, 0.1)";
                 badge.style.borderColor = "rgba(229, 9, 20, 0.2)";
@@ -1563,8 +1562,9 @@ function disconnectMockAPI(type) {
         btn.className = "btn btn-primary btn-sm";
         btn.onclick = () => connectMockAPI('meta');
         
-        // Remove from storage
         localStorage.removeItem("suagaragem_meta_token");
+        window.latestMetaInsights = [];
+        renderAll();
     } else if (type === 'sheets') {
         const badge = document.getElementById("badge-sheets");
         const btn = document.getElementById("btn-connect-sheets");
@@ -1579,7 +1579,6 @@ function disconnectMockAPI(type) {
         btn.className = "btn btn-primary btn-sm";
         btn.onclick = () => connectMockAPI('sheets');
         
-        // Remove from storage
         localStorage.removeItem("suagaragem_sheets_url");
     }
 }
@@ -1640,7 +1639,6 @@ function openXMLModal() {
     if (modal) modal.classList.add("active");
 }
 
-// Close XML viewer
 function closeXMLModal() {
     const modal = document.getElementById("xmlModal");
     if (modal) modal.classList.remove("active");

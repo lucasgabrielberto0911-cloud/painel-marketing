@@ -33,8 +33,8 @@
                     <span>Painel Geral</span>
                 </a>
                 <a href="#simulator" class="nav-item" id="nav-simulator" onclick="switchTab('simulator')">
-                    <i data-lucide="sliders"></i>
-                    <span>Simulador de Verba</span>
+                    <i data-lucide="dollar-sign"></i>
+                    <span>Verba por Carro</span>
                 </a>
                 <a href="#olx-manager" class="nav-item" id="nav-olx-manager" onclick="switchTab('olx-manager')">
                     <i data-lucide="layers"></i>
@@ -161,7 +161,7 @@
                     <!-- Column 1: Channel Distribution -->
                     <div class="dashboard-card glass">
                         <div class="card-header">
-                            <h2>Distribuição Recomendada</h2>
+                            <h2>Distribuição de Gasto Real</h2>
                             <i data-lucide="pie-chart" class="text-muted"></i>
                         </div>
                         <div class="card-body">
@@ -246,104 +246,75 @@
                 </div>
             </section>
 
-            <!-- Tab Content: Simulator -->
+            <!-- Tab Content: Verba Real por Carro -->
             <section id="tab-simulator" class="tab-content">
-                <div class="dashboard-card glass max-width-card">
+                <!-- Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper orange">
+                            <i data-lucide="dollar-sign"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Verba Planejada Total</h3>
+                            <p class="stat-value" id="verba-stat-planejado">R$ 0,00</p>
+                            <span class="stat-change">
+                                Soma das verbas mensais ativas
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper purple">
+                            <i data-lucide="facebook"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Gasto Real Total</h3>
+                            <p class="stat-value" id="verba-stat-gasto-real">R$ 0,00</p>
+                            <span class="stat-change">
+                                Investimento real do Meta Ads
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper green">
+                            <i data-lucide="percent"></i>
+                        </div>
+                        <div class="stat-data">
+                            <h3>Saldo Acumulado</h3>
+                            <p class="stat-value" id="verba-stat-saldo">R$ 0,00</p>
+                            <span class="stat-change" id="verba-stat-saldo-sub">
+                                Diferença (Planejado - Real)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card glass">
                     <div class="card-header">
                         <div>
-                            <h2>Simulador de Distribuição de Verba</h2>
-                            <p class="card-subtitle">Ajuste o orçamento total e veja a estimativa baseada nas praças de Linhares e Vitória</p>
+                            <h2>Verba Real por Carro Ativo</h2>
+                            <p class="card-subtitle">Comparativo de orçamento mensal planejado vs gastos reais consolidados do Meta Ads</p>
                         </div>
-                        <i data-lucide="sliders" class="text-muted"></i>
+                        <button class="btn btn-outline btn-sm" onclick="syncMetaAdsData()">
+                            <i data-lucide="refresh-cw"></i> Atualizar Dados do Meta
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <!-- Budget Inputs -->
-                        <div class="simulator-controls">
-                            <div class="control-group">
-                                <label for="totalBudgetRange">Orçamento Mensal Total: <span class="highlight-text" id="budgetRangeValue">R$ 2.000</span></label>
-                                <input type="range" id="totalBudgetRange" min="800" max="10000" step="100" value="2000" class="slider" oninput="calculateBudgetSimulation()">
-                            </div>
-                            
-                            <div class="split-controls">
-                                <div class="control-item">
-                                    <label><i data-lucide="shopping-bag"></i> Plano OLX (Fixo/Mês)</label>
-                                    <div class="input-with-currency">
-                                        <span>R$</span>
-                                        <input type="number" id="sim-olx" value="400" min="300" max="1000" oninput="calculateBudgetSimulation(true)">
-                                    </div>
-                                    <p class="field-info">Plano mensal fixo (10 carros)</p>
-                                </div>
-                                
-                                <div class="control-item">
-                                    <label><i data-lucide="facebook"></i> Meta Ads (FB Marketplace)</label>
-                                    <div class="input-with-currency">
-                                        <span>R$</span>
-                                        <input type="number" id="sim-fb" value="600" oninput="calculateBudgetSimulation(true)">
-                                    </div>
-                                    <p class="field-info">Campanha focada em catálogo e mensagens</p>
-                                </div>
-
-                                <div class="control-item">
-                                    <label><i data-lucide="instagram"></i> Meta Ads (Instagram)</label>
-                                    <div class="input-with-currency">
-                                        <span>R$</span>
-                                        <input type="number" id="sim-ig" value="1000" oninput="calculateBudgetSimulation(true)">
-                                    </div>
-                                    <p class="field-info">Campanha de Reels e Captação de Leads</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Projection Results -->
-                        <div class="projection-results-container mt-5">
-                            <h3>Projeção de Performance Estimada (Mensal)</h3>
-                            <div class="projection-grid">
-                                <div class="proj-card">
-                                    <div class="proj-channel olx">OLX</div>
-                                    <div class="proj-stat">
-                                        <span class="label">Leads Estimados</span>
-                                        <span class="val" id="proj-olx-leads">20</span>
-                                    </div>
-                                    <div class="proj-stat">
-                                        <span class="label">Custo por Lead</span>
-                                        <span class="val" id="proj-olx-cpl">R$ 20,00</span>
-                                    </div>
-                                    <div class="proj-meta">
-                                        <span class="status-indicator online"></span> Alta Intenção (Fundo de Funil)
-                                    </div>
-                                </div>
-
-                                <div class="proj-card">
-                                    <div class="proj-channel facebook">Facebook Marketplace</div>
-                                    <div class="proj-stat">
-                                        <span class="label">Leads Estimados</span>
-                                        <span class="val" id="proj-fb-leads">40</span>
-                                    </div>
-                                    <div class="proj-stat">
-                                        <span class="label">Custo por Lead</span>
-                                        <span class="val" id="proj-fb-cpl">R$ 15,00</span>
-                                    </div>
-                                    <div class="proj-meta">
-                                        <span class="status-indicator online"></span> Grande volume orgânico + pago
-                                    </div>
-                                </div>
-
-                                <div class="proj-card">
-                                    <div class="proj-channel instagram">Instagram</div>
-                                    <div class="proj-stat">
-                                        <span class="label">Leads Estimados</span>
-                                        <span class="val" id="proj-ig-leads">64</span>
-                                    </div>
-                                    <div class="proj-stat">
-                                        <span class="label">Custo por Lead</span>
-                                        <span class="val" id="proj-ig-cpl">R$ 15,62</span>
-                                    </div>
-                                    <div class="proj-meta">
-                                        <span class="status-indicator online"></span> Excelente para Branding + Whatsapp
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="card-body overflow-x">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Modelo do Veículo</th>
+                                    <th>Verba Planejada (Planilha)</th>
+                                    <th>Gasto Real (Meta Ads)</th>
+                                    <th>Diferença (Saldo)</th>
+                                    <th>Status / Cruzamento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="verbaCarroTableBody">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -826,6 +797,10 @@
                             <label for="car-custo-olx">Custo do Anúncio (R$ - Opcional)</label>
                             <input type="number" id="car-custo-olx" step="0.01" placeholder="Ex: 97,90" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="car-verba-mensal">Verba Mensal Planejada (R$)</label>
+                        <input type="number" id="car-verba-mensal" placeholder="Ex: 500" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
                     </div>
                     <div class="form-group flex-row align-center">
                         <input type="checkbox" id="car-hot" class="checkbox-input">
