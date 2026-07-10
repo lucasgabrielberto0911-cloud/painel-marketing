@@ -412,6 +412,7 @@ function switchTab(tabId) {
         overview: "Visão Geral do Marketing",
         history: "Histórico & Tendências",
         simulator: "Verba Real por Carro",
+        ranking: "Ranking de Performance",
         "olx-manager": "Meus Carros (Plano OLX)",
         "olx-rotation": "Painel de Rotação OLX",
         "meta-ads": "Campanhas (Meta Ads Live)",
@@ -424,11 +425,12 @@ function switchTab(tabId) {
     // Auto-fetch Meta Ads data on entering tabs
     if (tabId === 'meta-ads') {
         syncMetaAdsData(true);
-    } else if (tabId === 'simulator') {
+    } else if (tabId === 'simulator' || tabId === 'ranking') {
         if (!window.latestMetaInsights || window.latestMetaInsights.length === 0) {
             syncMetaAdsData(true);
         } else {
-            renderVerbaRealPorCarro();
+            if (tabId === 'simulator') renderVerbaRealPorCarro();
+            if (tabId === 'ranking') renderRanking();
         }
     } else if (tabId === 'history') {
         renderHistoryTrends();
@@ -453,6 +455,7 @@ function renderAll() {
     updateTips();
     renderVerbaRealPorCarro();
     renderHistoryTrends();
+    renderRanking();
 }
 
 // Update Top Stats Card
@@ -1384,6 +1387,7 @@ function syncMetaAdsData(silent = false) {
 
         renderMetaAdsTable(resCamp.data, resIns.data);
         renderVerbaRealPorCarro();
+        renderRanking();
 
         if (loadingSkeleton) loadingSkeleton.style.display = "none";
         if (tableWrapper) tableWrapper.style.display = "block";
@@ -1796,6 +1800,175 @@ function plotTrendChart(svgId, data, key1, key2, color1, color2) {
 
     drawLine(key1, color1);
     drawLine(key2, color2);
+}
+
+// Render "Ranking de Performance" comparison
+function renderRanking() {
+    const tbody = document.getElementById("rankingTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const activeCars = state.inventory.filter(car => car.status === 'active');
+    if (activeCars.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum carro ativo no momento para exibir no ranking.</td></tr>`;
+        return;
+    }
+
+    const insightsList = window.latestMetaInsights || [];
+
+    // Calculate raw metrics for all active cars
+    const carMetrics = activeCars.map(car => {
+        // 1. CPL (Custo por Lead)
+        const dias = car.data_olx ? calcularDiasNaOlx(car.data_olx) : null;
+        const custo = car.custo_olx || 97.90;
+        const custoAcumulado = dias !== null ? (custo / 30) * dias : 0;
+        const leads = car.leads || 0;
+        const cpl = leads > 0 ? (custoAcumulado / leads) : null;
+
+        // 2. Dias na OLX
+        const diasVal = dias;
+
+        // 3. Adherence Deviation
+        let spentReal = 0;
+        const matchingCampaigns = insightsList.filter(ins => matchModelWithCampaign(car.model, ins.campaign_name));
+        if (matchingCampaigns.length > 0) {
+            spentReal = matchingCampaigns.reduce((sum, ins) => sum + (parseFloat(ins.spend) || 0), 0);
+        }
+        const verbaPlanejada = car.verba_mensal || 0;
+        const adhDev = verbaPlanejada > 0 ? Math.abs(1 - (spentReal / verbaPlanejada)) : null;
+
+        return {
+            car,
+            cpl,
+            custoAcumulado,
+            dias: diasVal,
+            spentReal,
+            verbaPlanejada,
+            adhDev
+        };
+    });
+
+    // Extract valid arrays to compute min/max
+    const validCpls = carMetrics.map(m => m.cpl).filter(v => v !== null);
+    const validDias = carMetrics.map(m => m.dias).filter(v => v !== null);
+    const validAdhDevs = carMetrics.map(m => m.adhDev).filter(v => v !== null);
+
+    const minCpl = validCpls.length > 0 ? Math.min(...validCpls) : 0;
+    const maxCpl = validCpls.length > 0 ? Math.max(...validCpls) : 0;
+
+    const minDias = validDias.length > 0 ? Math.min(...validDias) : 0;
+    const maxDias = validDias.length > 0 ? Math.max(...validDias) : 0;
+
+    const minAdhDev = validAdhDevs.length > 0 ? Math.min(...validAdhDevs) : 0;
+    const maxAdhDev = validAdhDevs.length > 0 ? Math.max(...validAdhDevs) : 0;
+
+    // Calculate final scores
+    const scoredCars = carMetrics.map(item => {
+        const scores = [];
+
+        // Normalize CPL (lower is better, i.e., min is best)
+        if (item.cpl !== null) {
+            let score = 100;
+            if (maxCpl !== minCpl) {
+                score = ((maxCpl - item.cpl) / (maxCpl - minCpl)) * 100;
+            }
+            scores.push(score);
+        }
+
+        // Normalize Dias (lower is better, i.e., min is best)
+        if (item.dias !== null) {
+            let score = 100;
+            if (maxDias !== minDias) {
+                score = ((maxDias - item.dias) / (maxDias - minDias)) * 100;
+            }
+            scores.push(score);
+        }
+
+        // Normalize Adherence Deviation (lower is better, deviation closer to 0 is best)
+        if (item.adhDev !== null) {
+            let score = 100;
+            if (maxAdhDev !== minAdhDev) {
+                score = ((maxAdhDev - item.adhDev) / (maxAdhDev - minAdhDev)) * 100;
+            }
+            scores.push(score);
+        }
+
+        // Final score: average of available normalized factors
+        const finalScore = scores.length > 0 
+            ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length)
+            : 50; // default to middle score if no indicators are available
+
+        return {
+            ...item,
+            finalScore
+        };
+    });
+
+    // Sort by finalScore descending (highest score first)
+    scoredCars.sort((a, b) => b.finalScore - a.finalScore);
+
+    // Render rows in the ranking table
+    scoredCars.forEach((item, index) => {
+        const position = index + 1;
+        let positionHtml = `<span class="rank-position">${position}º</span>`;
+        if (position === 1) {
+            positionHtml = `<span class="rank-position" style="color: #fbbf24;"><span class="rank-medal">🏆</span> 1º</span>`;
+        } else if (position === 2) {
+            positionHtml = `<span class="rank-position" style="color: #9ca3af;"><span class="rank-medal">🥈</span> 2º</span>`;
+        } else if (position === 3) {
+            positionHtml = `<span class="rank-position" style="color: #b45309;"><span class="rank-medal">🥉</span> 3º</span>`;
+        }
+
+        const isLow = item.finalScore < 40;
+        
+        // Progress bar visual color classification
+        let barColor = "var(--success)"; // Green
+        if (item.finalScore < 40) {
+            barColor = "var(--primary)"; // Red
+        } else if (item.finalScore < 70) {
+            barColor = "#eab308"; // Yellow
+        }
+
+        const formattedCpl = item.cpl !== null 
+            ? item.cpl.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : `<span style="color: var(--text-muted); font-style: italic;">Sem leads</span>`;
+
+        const formattedDias = item.dias !== null 
+            ? `${item.dias} dias`
+            : `<span style="color: var(--text-muted); font-style: italic;">—</span>`;
+
+        let formattedAdh = "—";
+        if (item.verbaPlanejada > 0) {
+            const ratio = (item.spentReal / item.verbaPlanejada) * 100;
+            formattedAdh = `<strong>${Math.round(ratio)}%</strong> <span style="font-size: 0.72rem; color: var(--text-muted);">(${item.spentReal.toFixed(0)}/${item.verbaPlanejada.toFixed(0)})</span>`;
+        } else {
+            formattedAdh = `<span style="color: var(--text-muted); font-style: italic;">Sem verba</span>`;
+        }
+
+        const tr = document.createElement("tr");
+        if (isLow) tr.className = "rank-row-low";
+
+        tr.innerHTML = `
+            <td>${positionHtml}</td>
+            <td><strong>${item.car.model}</strong></td>
+            <td>
+                <div class="rank-progress-wrapper">
+                    <span class="rank-score" style="color: ${barColor};">${item.finalScore}</span>
+                    <div class="rank-progress-bar">
+                        <div class="rank-progress-fill" style="width: ${item.finalScore}%; background: ${barColor};"></div>
+                    </div>
+                </div>
+            </td>
+            <td>${formattedCpl}</td>
+            <td>${formattedDias}</td>
+            <td>${formattedAdh}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 // Integration Real API System (Google Sheets Live Auth & Read)

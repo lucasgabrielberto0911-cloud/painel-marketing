@@ -1088,6 +1088,48 @@ body {
     to { transform: translateX(120%); opacity: 0; }
 }
 
+/* ======================== RANKING TABLE ======================== */
+.rank-progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
 
+.rank-progress-bar {
+    flex-grow: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 80px;
+}
 
+.rank-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
 
+.rank-score {
+    font-weight: 700;
+    font-size: 0.88rem;
+    min-width: 36px;
+    text-align: right;
+}
+
+.rank-medal {
+    font-size: 1.1rem;
+    margin-right: 0.15rem;
+}
+
+.rank-position {
+    font-weight: 700;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.rank-row-low td {
+    opacity: 0.75;
+}

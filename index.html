@@ -68,6 +68,10 @@
                     <i data-lucide="facebook"></i>
                     <span>Campanhas (Meta Ads)</span>
                 </a>
+                <a href="#ranking" class="nav-item" id="nav-ranking" onclick="switchTab('ranking')">
+                    <i data-lucide="trophy"></i>
+                    <span>Ranking de Performance</span>
+                </a>
                 <a href="#local-insights" class="nav-item" id="nav-local-insights" onclick="switchTab('local-insights')">
                     <i data-lucide="map-pin"></i>
                     <span>Insights Regionais</span>
@@ -679,6 +683,54 @@
             </section>
 
             <!-- Tab Content: Regional Insights -->
+            <!-- Tab Content: Ranking de Performance -->
+            <section id="tab-ranking" class="tab-content">
+                <div class="dashboard-card glass" style="margin-bottom: 1.5rem;">
+                    <div class="card-body" style="padding: 1.2rem 1.5rem;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                            <i data-lucide="info" style="color: var(--text-muted); flex-shrink: 0; margin-top: 2px; width: 18px; height: 18px;"></i>
+                            <div>
+                                <p style="color: var(--text-secondary); font-size: 0.82rem; line-height: 1.55; margin: 0;">
+                                    <strong style="color: var(--text-primary);">Como funciona a pontuação?</strong><br>
+                                    Cada carro ativo recebe uma nota de 0 a 100 comparando três fatores com os demais carros:
+                                    <strong>Custo por Lead</strong> (quanto menor, melhor),
+                                    <strong>Dias na OLX</strong> (quanto menos tempo parado, melhor) e
+                                    <strong>Aderência à Verba</strong> (quanto mais próximo do orçamento planejado, melhor).
+                                    Se algum dado não estiver disponível para um carro, ele é ignorado no cálculo sem prejudicar a nota.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card glass">
+                    <div class="card-header">
+                        <div>
+                            <h2>Ranking de Performance dos Carros Ativos</h2>
+                            <p class="card-subtitle">Classificação automática baseada em custo, tempo e aderência ao orçamento</p>
+                        </div>
+                        <i data-lucide="trophy" class="text-muted"></i>
+                    </div>
+                    <div class="card-body overflow-x">
+                        <table class="table" id="rankingTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">#</th>
+                                    <th>Modelo</th>
+                                    <th style="min-width: 200px;">Pontuação</th>
+                                    <th>Custo/Lead</th>
+                                    <th>Dias na OLX</th>
+                                    <th>Aderência à Verba</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <section id="tab-local-insights" class="tab-content">
                 <div class="insights-container">
                     <div class="insight-row">
