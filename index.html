@@ -174,6 +174,39 @@
                     </div>
                 </div>
 
+                <!-- Quick Actions & Today's Alerts -->
+                <div class="dashboard-grid mt-4" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                    <!-- Quick Actions Card -->
+                    <div class="dashboard-card glass">
+                        <div class="card-header">
+                            <h2>Ações Rápidas</h2>
+                            <i data-lucide="zap" class="text-muted"></i>
+                        </div>
+                        <div class="card-body" style="display: flex; gap: 0.75rem; flex-wrap: wrap; padding-top: 0.5rem;">
+                            <button class="btn btn-outline btn-sm" onclick="openQuickSoldModal()" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem;">
+                                <i data-lucide="check-square" style="width: 14px; height: 14px;"></i> Marcar como vendido
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="openCampaignModal()" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem;">
+                                <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> Registrar campanha
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="switchTab('olx-rotation')" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem;">
+                                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Trocar carros na OLX
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Alerts Card -->
+                    <div class="dashboard-card glass">
+                        <div class="card-header">
+                            <h2>Alertas de Hoje</h2>
+                            <i data-lucide="bell" class="text-muted"></i>
+                        </div>
+                        <div class="card-body" id="overview-alerts-container" style="display: flex; flex-direction: column; gap: 0.6rem; justify-content: center; min-height: 60px; padding-top: 0.5rem;">
+                            <!-- Dynamic Alerts will be populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Main Overview Widgets -->
                 <div class="dashboard-grid">
                     <!-- Column 1: Channel Distribution -->
@@ -957,6 +990,33 @@
                     <button class="btn btn-outline" onclick="closeXMLModal()">Fechar</button>
                     <button class="btn btn-primary" onclick="copyXMLContent()"><i data-lucide="copy"></i> Copiar Conteúdo</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Mark as Sold Modal -->
+    <div class="modal-overlay" id="quickSoldModal">
+        <div class="modal-card glass" style="max-width: 480px;">
+            <div class="modal-header">
+                <h2>Marcar Carro como Vendido</h2>
+                <button class="btn-close" onclick="closeQuickSoldModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickSoldForm" onsubmit="handleQuickSoldSubmit(event)">
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="quick-sold-car-select">Selecione o Carro Ativo</label>
+                        <p class="field-info" style="margin-bottom: 0.6rem; font-size: 0.78rem; line-height: 1.4;">
+                            Apenas carros anunciados na OLX (status Ativo) aparecem nesta lista.
+                        </p>
+                        <select id="quick-sold-car-select" required style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                            <!-- Dynamic Options -->
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeQuickSoldModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Marcar como Vendido</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

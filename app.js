@@ -468,6 +468,7 @@ function renderAll() {
     renderVerbaRealPorCarro();
     renderHistoryTrends();
     renderRanking();
+    renderAlerts();
 }
 
 // Update Top Stats Card
@@ -2353,3 +2354,130 @@ window.saveSettings = function(event) {
         showToast("Configurações salvas localmente!");
     }
 };
+
+// Open Quick Sold Modal and populate dropdown with active cars
+window.openQuickSoldModal = function() {
+    const select = document.getElementById("quick-sold-car-select");
+    if (!select) return;
+    select.innerHTML = "";
+
+    const activeCars = state.inventory
+        .map((car, index) => ({ ...car, originalIndex: index }))
+        .filter(car => car.status === 'active');
+
+    if (activeCars.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.disabled = true;
+        option.selected = true;
+        option.innerText = "Nenhum carro ativo no momento.";
+        select.appendChild(option);
+    } else {
+        activeCars.forEach(car => {
+            const option = document.createElement("option");
+            option.value = car.originalIndex;
+            option.innerText = car.model;
+            select.appendChild(option);
+        });
+    }
+
+    document.getElementById("quickSoldModal").classList.add("active");
+};
+
+// Close Quick Mark as Sold Modal
+window.closeQuickSoldModal = function() {
+    document.getElementById("quickSoldModal").classList.remove("active");
+};
+
+// Handle Form Submission for Quick Mark as Sold
+window.handleQuickSoldSubmit = function(event) {
+    event.preventDefault();
+    const select = document.getElementById("quick-sold-car-select");
+    if (!select || select.value === "") return;
+
+    const index = parseInt(select.value);
+    closeQuickSoldModal();
+    
+    // Trigger existing markAsSoldQuick logic
+    markAsSoldQuick(index);
+};
+
+// Generate Today's Alerts list based on inventory state
+function renderAlerts() {
+    const container = document.getElementById("overview-alerts-container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const alertsList = [];
+
+    // 1. Check for OLX stagnation (> 20 days)
+    const rotationCount = state.inventory.filter(car => {
+        if (car.status !== 'active') return false;
+        const dias = car.data_olx ? calcularDiasNaOlx(car.data_olx) : null;
+        return dias !== null && dias > 20;
+    }).length;
+
+    if (rotationCount > 0) {
+        alertsList.push({
+            type: 'warning',
+            text: `${rotationCount} carro${rotationCount > 1 ? 's' : ''} precisando de rotação na OLX (mais de 20 dias).`,
+            action: () => switchTab('olx-rotation')
+        });
+    }
+
+    // 2. Check for budget adherence overflow
+    const activeCars = state.inventory.filter(car => car.status === 'active');
+    const insightsList = window.latestMetaInsights || [];
+    let overspentCount = 0;
+
+    activeCars.forEach(car => {
+        const verbaPlanejada = car.verba_mensal || 0;
+        if (verbaPlanejada > 0) {
+            const matchingCampaigns = insightsList.filter(ins => matchModelWithCampaign(car.model, ins.campaign_name));
+            const spentReal = matchingCampaigns.reduce((sum, ins) => sum + (parseFloat(ins.spend) || 0), 0);
+            if (spentReal > verbaPlanejada) {
+                overspentCount++;
+            }
+        }
+    });
+
+    if (overspentCount > 0) {
+        alertsList.push({
+            type: 'danger',
+            text: `${overspentCount} carro${overspentCount > 1 ? 's' : ''} estourando o orçamento planejado no Meta Ads.`,
+            action: () => switchTab('simulator')
+        });
+    }
+
+    // 3. Render
+    if (alertsList.length === 0) {
+        const okBox = document.createElement("div");
+        okBox.style.cssText = "display: flex; align-items: center; gap: 0.5rem; color: var(--success); font-size: 0.82rem; font-weight: 500;";
+        okBox.innerHTML = `<i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Tudo em ordem hoje`;
+        container.appendChild(okBox);
+    } else {
+        alertsList.forEach(alertItem => {
+            const alertEl = document.createElement("div");
+            alertEl.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: 0.82rem; cursor: pointer; transition: background 0.2s;";
+            alertEl.onclick = alertItem.action;
+            alertEl.onmouseenter = () => alertEl.style.background = "rgba(255, 255, 255, 0.05)";
+            alertEl.onmouseleave = () => alertEl.style.background = "rgba(255, 255, 255, 0.02)";
+
+            const iconColor = alertItem.type === 'danger' ? 'var(--primary-light)' : 'var(--warning)';
+            const iconName = alertItem.type === 'danger' ? 'alert-triangle' : 'clock';
+
+            alertEl.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="${iconName}" style="color: ${iconColor}; width: 15px; height: 15px; flex-shrink: 0;"></i>
+                    <span>${alertItem.text}</span>
+                </div>
+                <span style="color: var(--text-muted); font-size: 0.72rem; display: flex; align-items: center; gap: 0.2rem;">Ver <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i></span>
+            `;
+            container.appendChild(alertEl);
+        });
+    }
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
