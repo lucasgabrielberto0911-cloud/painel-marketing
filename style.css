@@ -152,6 +152,22 @@ body {
     flex-grow: 1;
 }
 
+.nav-group-header {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 0.75rem 0.75rem 0.25rem 0.75rem;
+    opacity: 0.6;
+}
+
+.nav-group-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.03);
+    margin: 0.35rem 0.75rem;
+}
+
 .nav-item {
     display: flex;
     align-items: center;
@@ -669,6 +685,11 @@ body {
 .kanban-column.highlighted {
     border-color: rgba(220,38,38,.15);
 }
+.kanban-column.drag-over {
+    border-color: var(--primary) !important;
+    background: rgba(220, 38, 38, 0.04) !important;
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.1) !important;
+}
 
 .column-header {
     display: flex; justify-content: space-between; align-items: center;
@@ -1050,4 +1071,135 @@ body {
 @media (max-width: 600px) {
     .stats-grid { grid-template-columns: 1fr; }
     .form-row-2 { grid-template-columns: 1fr; }
+}
+
+.table tbody tr {
+    transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out;
+}
+
+.row-alert {
+    border-left: 3px solid var(--primary) !important;
+    animation: rowAlertFadeIn 0.3s ease-in-out forwards;
+}
+
+@keyframes rowAlertFadeIn {
+    from { background-color: transparent; }
+    to { background-color: rgba(220, 38, 38, 0.04); }
+}
+
+.badge-alert {
+    background: rgba(220, 38, 38, 0.12) !important;
+    color: var(--primary-light) !important;
+    border: 1px solid rgba(220, 38, 38, 0.25) !important;
+}
+
+/* Animations & Transitions */
+.tab-content {
+    display: none;
+    opacity: 0;
+}
+.tab-content.active {
+    display: block;
+    animation: tabFadeIn 0.22s ease-in-out forwards;
+}
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.car-card, .table tbody tr {
+    animation: elementFadeIn 0.2s ease-in-out forwards;
+}
+
+@keyframes elementFadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hover shadow effects */
+.btn:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+/* Pure CSS Loading Spinner */
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 0.3; }
+    100% { opacity: 0.6; }
+}
+
+@keyframes toastSlideIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toastSlideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(120%); opacity: 0; }
+}
+
+/* ======================== RANKING TABLE ======================== */
+.rank-progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.rank-progress-bar {
+    flex-grow: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 80px;
+}
+
+.rank-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.rank-score {
+    font-weight: 700;
+    font-size: 0.88rem;
+    min-width: 36px;
+    text-align: right;
+}
+
+.rank-medal {
+    font-size: 1.1rem;
+    margin-right: 0.15rem;
+}
+
+.rank-position {
+    font-weight: 700;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.rank-row-low td {
+    opacity: 0.75;
 }

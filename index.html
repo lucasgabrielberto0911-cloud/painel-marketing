@@ -8,8 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <!-- Application Logic -->
+    <script src="app.js" defer></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-theme">
@@ -24,29 +28,62 @@
             </div>
             
             <nav class="nav-menu">
+                <!-- Visão Geral -->
+                <div class="nav-group-header">Visão Geral</div>
                 <a href="#overview" class="nav-item active" id="nav-overview" onclick="switchTab('overview')">
                     <i data-lucide="layout-dashboard"></i>
                     <span>Painel Geral</span>
                 </a>
-                <a href="#simulator" class="nav-item" id="nav-simulator" onclick="switchTab('simulator')">
-                    <i data-lucide="sliders"></i>
-                    <span>Simulador de Verba</span>
+                <a href="#history" class="nav-item" id="nav-history" onclick="switchTab('history')">
+                    <i data-lucide="line-chart"></i>
+                    <span>Histórico & Tendências</span>
                 </a>
+
+                <div class="nav-group-divider"></div>
+
+                <!-- Estoque -->
+                <div class="nav-group-header">Estoque</div>
                 <a href="#olx-manager" class="nav-item" id="nav-olx-manager" onclick="switchTab('olx-manager')">
                     <i data-lucide="layers"></i>
-                    <span>Plano OLX (10 Carros)</span>
+                    <span>Meus Carros</span>
+                </a>
+                <a href="#olx-rotation" class="nav-item" id="nav-olx-rotation" onclick="switchTab('olx-rotation')">
+                    <i data-lucide="refresh-cw"></i>
+                    <span>Rotação OLX</span>
+                </a>
+
+                <div class="nav-group-divider"></div>
+
+                <!-- Marketing -->
+                <div class="nav-group-header">Marketing</div>
+                <a href="#simulator" class="nav-item" id="nav-simulator" onclick="switchTab('simulator')">
+                    <i data-lucide="dollar-sign"></i>
+                    <span>Verba por Carro</span>
                 </a>
                 <a href="#campaign-tracker" class="nav-item" id="nav-campaign-tracker" onclick="switchTab('campaign-tracker')">
                     <i data-lucide="trending-up"></i>
-                    <span>Rastrear Campanhas</span>
+                    <span>Campanhas (Planilha)</span>
                 </a>
-                <a href="#integrations" class="nav-item" id="nav-integrations" onclick="switchTab('integrations')">
-                    <i data-lucide="link"></i>
-                    <span>Integrações & API</span>
+                <a href="#meta-ads" class="nav-item" id="nav-meta-ads" onclick="switchTab('meta-ads')">
+                    <i data-lucide="facebook"></i>
+                    <span>Campanhas (Meta Ads)</span>
+                </a>
+                <a href="#ranking" class="nav-item" id="nav-ranking" onclick="switchTab('ranking')">
+                    <i data-lucide="trophy"></i>
+                    <span>Ranking de Performance</span>
                 </a>
                 <a href="#local-insights" class="nav-item" id="nav-local-insights" onclick="switchTab('local-insights')">
                     <i data-lucide="map-pin"></i>
                     <span>Insights Regionais</span>
+                </a>
+
+                <div class="nav-group-divider"></div>
+
+                <!-- Configurações -->
+                <div class="nav-group-header">Configurações</div>
+                <a href="#integrations" class="nav-item" id="nav-integrations" onclick="switchTab('integrations')">
+                    <i data-lucide="link"></i>
+                    <span>Integrações & API</span>
                 </a>
             </nav>
             
@@ -89,15 +126,20 @@
 
             <!-- Tab Content: Overview -->
             <section id="tab-overview" class="tab-content active">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                    <button class="btn btn-outline btn-sm" id="btn-save-snapshot" onclick="saveManualSnapshot()" style="gap: 0.3rem;">
+                        <i data-lucide="camera"></i> Salvar Snapshot de Hoje
+                    </button>
+                </div>
                 <!-- Stats Grid -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">
                             <i data-lucide="dollar-sign"></i>
-                            <span>Orçamento mensal</span>
+                            <span>Orçamento planejado</span>
                         </div>
-                        <p class="stat-value num" id="stat-budget">R$ 2.000,00</p>
-                        <span class="stat-change neutral">OLX fixo + tráfego pago</span>
+                        <p class="stat-value num" id="stat-budget">R$ 0,00</p>
+                        <span class="stat-change neutral" id="stat-budget-sub">Verbas dos carros ativos</span>
                     </div>
 
                     <div class="stat-card">
@@ -133,7 +175,7 @@
                     <!-- Column 1: Channel Distribution -->
                     <div class="dashboard-card glass">
                         <div class="card-header">
-                            <h2>Distribuição Recomendada</h2>
+                            <h2>Distribuição de Gasto Real</h2>
                             <i data-lucide="pie-chart" class="text-muted"></i>
                         </div>
                         <div class="card-body">
@@ -192,109 +234,148 @@
                                     </button>
                                 </div>
                             </div>
+                </div>
+
+                <!-- Performance History Chart -->
+                <div class="dashboard-card glass mt-4">
+                    <div class="card-header">
+                        <div>
+                            <h2>Histórico de Performance (Leads Gerados)</h2>
+                            <p class="card-subtitle">Evolução do volume de contatos nos últimos meses por canal de tráfego</p>
+                        </div>
+                        <i data-lucide="trending-up" class="text-muted"></i>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                            <svg id="performanceChart" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                                <!-- populated via JS -->
+                            </svg>
+                        </div>
+                        <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
+                            <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--olx-color); border-radius: 2px;"></span> OLX</span>
+                            <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--fb-color); border-radius: 2px;"></span> Facebook</span>
+                            <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--ig-color); border-radius: 2px;"></span> Instagram</span>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Tab Content: Simulator -->
+            <!-- Tab Content: History Trends -->
+            <section id="tab-history" class="tab-content">
+                <!-- Empty State Message -->
+                <div id="history-empty-state" class="dashboard-card glass text-center" style="display: none; padding: 3rem 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📈</div>
+                    <h2>Nenhum Histórico Disponível</h2>
+                    <p class="card-subtitle mt-2" style="max-width: 450px; margin: 0 auto;">Salve snapshots periódicos na aba "Visão Geral" para gerar e visualizar gráficos de tendências do seu negócio ao longo do tempo.</p>
+                </div>
+
+                <!-- History Content -->
+                <div id="history-content" style="display: none;">
+                    <div class="dashboard-grid">
+                        <!-- Chart 1: Planned vs Real Spent -->
+                        <div class="dashboard-card glass">
+                            <div class="card-header">
+                                <div>
+                                    <h2>Orçamento: Planejado vs Gasto Real (Meta Ads)</h2>
+                                    <p class="card-subtitle">Evolução do investimento planejado em estoque vs o gasto real de mídia</p>
+                                </div>
+                                <i data-lucide="dollar-sign" class="text-muted"></i>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                                    <svg id="chartBudgetTrend" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                                        <!-- dynamic svg lines -->
+                                    </svg>
+                                </div>
+                                <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
+                                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--primary); border-radius: 2px;"></span> Planejado (Estoque)</span>
+                                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--fb-color); border-radius: 2px;"></span> Gasto Real (Meta)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Leads vs Sales -->
+                        <div class="dashboard-card glass">
+                            <div class="card-header">
+                                <div>
+                                    <h2>Performance: Contatos vs Vendas Fechadas</h2>
+                                    <p class="card-subtitle">Evolução da conversão de leads gerados em vendas fechadas</p>
+                                </div>
+                                <i data-lucide="trending-up" class="text-muted"></i>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                                    <svg id="chartLeadsSalesTrend" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                                        <!-- dynamic svg lines -->
+                                    </svg>
+                                </div>
+                                <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
+                                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--success); border-radius: 2px;"></span> Vendas Realizadas</span>
+                                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: #6366f1; border-radius: 2px;"></span> Contatos Gerados</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Verba Real por Carro -->
             <section id="tab-simulator" class="tab-content">
-                <div class="dashboard-card glass max-width-card">
+                <!-- Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="dollar-sign"></i>
+                            <span>Verba planejada total</span>
+                        </div>
+                        <p class="stat-value num" id="verba-stat-planejado">R$ 0,00</p>
+                        <span class="stat-change neutral">Soma das verbas mensais ativas</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="facebook"></i>
+                            <span>Gasto real total</span>
+                        </div>
+                        <p class="stat-value num" id="verba-stat-gasto-real">R$ 0,00</p>
+                        <span class="stat-change neutral">Investimento real do Meta Ads</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="percent"></i>
+                            <span>Saldo acumulado</span>
+                        </div>
+                        <p class="stat-value num" id="verba-stat-saldo">R$ 0,00</p>
+                        <span class="stat-change neutral" id="verba-stat-saldo-sub">Diferença (planejado - real)</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-card glass">
                     <div class="card-header">
                         <div>
-                            <h2>Simulador de Distribuição de Verba</h2>
-                            <p class="card-subtitle">Ajuste o orçamento total e veja a estimativa baseada nas praças de Linhares e Vitória</p>
+                            <h2>Verba Real por Carro Ativo</h2>
+                            <p class="card-subtitle">Comparativo de orçamento mensal planejado vs gastos reais consolidados do Meta Ads</p>
                         </div>
-                        <i data-lucide="sliders" class="text-muted"></i>
+                        <button class="btn btn-outline btn-sm" onclick="syncMetaAdsData()">
+                            <i data-lucide="refresh-cw"></i> Atualizar Dados do Meta
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <!-- Budget Inputs -->
-                        <div class="simulator-controls">
-                            <div class="control-group">
-                                <label for="totalBudgetRange">Orçamento Mensal Total: <span class="highlight-text" id="budgetRangeValue">R$ 2.000</span></label>
-                                <input type="range" id="totalBudgetRange" min="800" max="10000" step="100" value="2000" class="slider" oninput="calculateBudgetSimulation()">
-                            </div>
-                            
-                            <div class="split-controls">
-                                <div class="control-item">
-                                    <label><i data-lucide="shopping-bag"></i> Plano OLX (Fixo/Mês)</label>
-                                    <div class="input-with-currency">
-                                        <span>R$</span>
-                                        <input type="number" id="sim-olx" value="400" min="300" max="1000" oninput="calculateBudgetSimulation(true)">
-                                    </div>
-                                    <p class="field-info">Plano mensal fixo (10 carros)</p>
-                                </div>
-                                
-                                <div class="control-item">
-                                    <label><i data-lucide="facebook"></i> Meta Ads (FB Marketplace)</label>
-                                    <div class="input-with-currency">
-                                        <span>R$</span>
-                                        <input type="number" id="sim-fb" value="600" oninput="calculateBudgetSimulation(true)">
-                                    </div>
-                                    <p class="field-info">Campanha focada em catálogo e mensagens</p>
-                                </div>
-
-                                <div class="control-item">
-                                    <label><i data-lucide="instagram"></i> Meta Ads (Instagram)</label>
-                                    <div class="input-with-currency">
-                                        <span>R$</span>
-                                        <input type="number" id="sim-ig" value="1000" oninput="calculateBudgetSimulation(true)">
-                                    </div>
-                                    <p class="field-info">Campanha de Reels e Captação de Leads</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Projection Results -->
-                        <div class="projection-results-container mt-5">
-                            <h3>Projeção de Performance Estimada (Mensal)</h3>
-                            <div class="projection-grid">
-                                <div class="proj-card">
-                                    <div class="proj-channel olx">OLX</div>
-                                    <div class="proj-stat">
-                                        <span class="label">Leads Estimados</span>
-                                        <span class="val" id="proj-olx-leads">20</span>
-                                    </div>
-                                    <div class="proj-stat">
-                                        <span class="label">Custo por Lead</span>
-                                        <span class="val" id="proj-olx-cpl">R$ 20,00</span>
-                                    </div>
-                                    <div class="proj-meta">
-                                        <span class="status-indicator online"></span> Alta Intenção (Fundo de Funil)
-                                    </div>
-                                </div>
-
-                                <div class="proj-card">
-                                    <div class="proj-channel facebook">Facebook Marketplace</div>
-                                    <div class="proj-stat">
-                                        <span class="label">Leads Estimados</span>
-                                        <span class="val" id="proj-fb-leads">40</span>
-                                    </div>
-                                    <div class="proj-stat">
-                                        <span class="label">Custo por Lead</span>
-                                        <span class="val" id="proj-fb-cpl">R$ 15,00</span>
-                                    </div>
-                                    <div class="proj-meta">
-                                        <span class="status-indicator online"></span> Grande volume orgânico + pago
-                                    </div>
-                                </div>
-
-                                <div class="proj-card">
-                                    <div class="proj-channel instagram">Instagram</div>
-                                    <div class="proj-stat">
-                                        <span class="label">Leads Estimados</span>
-                                        <span class="val" id="proj-ig-leads">64</span>
-                                    </div>
-                                    <div class="proj-stat">
-                                        <span class="label">Custo por Lead</span>
-                                        <span class="val" id="proj-ig-cpl">R$ 15,62</span>
-                                    </div>
-                                    <div class="proj-meta">
-                                        <span class="status-indicator online"></span> Excelente para Branding + Whatsapp
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="card-body overflow-x">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Modelo do Veículo</th>
+                                    <th>Verba Planejada (Planilha)</th>
+                                    <th>Gasto Real (Meta Ads)</th>
+                                    <th>Diferença (Saldo)</th>
+                                    <th>Status / Cruzamento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="verbaCarroTableBody">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -309,101 +390,234 @@
                     </div>
                 </div>
 
+                <!-- Kanban Search & Filters -->
+                <div class="kanban-filters" style="display: flex; gap: 1rem; margin-bottom: 1.25rem; align-items: center; flex-wrap: wrap;">
+                    <div class="input-with-currency" style="flex: 1; min-width: 250px; padding: 0.5rem 0.75rem;">
+                        <i data-lucide="search" style="width: 16px; height: 16px; color: var(--text-muted); margin-right: 0.5rem;"></i>
+                        <input type="text" id="kanbanSearch" placeholder="Buscar por modelo ou versão..." style="font-size: 0.82rem; font-weight: 500;">
+                    </div>
+                    <select id="kanbanTypeFilter" onchange="renderKanban()" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; width: auto; min-width: 150px; outline: none; cursor: pointer;">
+                        <option value="all">Todas as carrocerias</option>
+                        <option value="img_suv">SUVs</option>
+                        <option value="img_sedan">Sedans</option>
+                        <option value="img_hatch">Hatchbacks</option>
+                        <option value="img_pickup">Pickups</option>
+                    </select>
+                </div>
+
                 <div class="kanban-board">
                     <!-- Column 1: Fila de Espera (Estoque Geral) -->
-                    <div class="kanban-column" id="col-stock">
+                    <div class="kanban-column" id="col-stock" ondragover="allowDrop(event)" ondrop="drop(event, 'stock')" ondragenter="dragEnter(event, 'stock')" ondragleave="dragLeave(event, 'stock')">
                         <div class="column-header">
                             <h3>Estoque Geral (Fila)</h3>
                             <span class="count-badge" id="count-stock">0</span>
                         </div>
-                        <div class="column-cards" id="cards-stock" ondragover="allowDrop(event)" ondrop="drop(event, 'stock')">
+                        <div class="column-cards" id="cards-stock">
                             <!-- JS populated -->
                         </div>
                     </div>
 
                     <!-- Column 2: Ativos no Plano OLX (Máx 10) -->
-                    <div class="kanban-column highlighted" id="col-active">
+                    <div class="kanban-column highlighted" id="col-active" ondragover="allowDrop(event)" ondrop="drop(event, 'active')" ondragenter="dragEnter(event, 'active')" ondragleave="dragLeave(event, 'active')">
                         <div class="column-header">
                             <h3>Ativos no Plano OLX</h3>
                             <span class="count-badge active-plan" id="count-active">0 / 10</span>
                         </div>
-                        <div class="column-cards" id="cards-active" ondragover="allowDrop(event)" ondrop="drop(event, 'active')">
+                        <div class="column-cards" id="cards-active">
                             <!-- JS populated -->
                         </div>
                     </div>
 
                     <!-- Column 3: Vendidos (Histórico) -->
-                    <div class="kanban-column" id="col-sold">
+                    <div class="kanban-column" id="col-sold" ondragover="allowDrop(event)" ondrop="drop(event, 'sold')" ondragenter="dragEnter(event, 'sold')" ondragleave="dragLeave(event, 'sold')">
                         <div class="column-header">
                             <h3>Vendidos</h3>
                             <span class="count-badge sold-plan" id="count-sold">0</span>
                         </div>
-                        <div class="column-cards" id="cards-sold" ondragover="allowDrop(event)" ondrop="drop(event, 'sold')">
+                        <div class="column-cards" id="cards-sold">
                             <!-- JS populated -->
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Tab Content: Campaign Tracker -->
-            <section id="tab-campaign-tracker" class="tab-content">
-                <div class="dashboard-grid-1-2">
-                    <!-- Form side -->
-                    <div class="dashboard-card glass">
-                        <div class="card-header">
-                            <h2>Registrar Resultados</h2>
+            <!-- Tab Content: OLX Rotation -->
+            <section id="tab-olx-rotation" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="dollar-sign"></i>
+                            <span>Custo do plano OLX</span>
                         </div>
-                        <div class="card-body">
-                            <form id="campaignForm" onsubmit="saveCampaign(event)">
-                                <div class="form-group">
-                                    <label for="camp-date">Data de Início</label>
-                                    <input type="date" id="camp-date" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="camp-channel">Canal do Anúncio</label>
-                                    <select id="camp-channel" required>
-                                        <option value="OLX">OLX</option>
-                                        <option value="Facebook Marketplace">Facebook Marketplace</option>
-                                        <option value="Instagram Ads">Instagram Ads</option>
-                                        <option value="Google Ads">Google Ads</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="camp-spent">Valor Gasto (R$)</label>
-                                    <input type="number" id="camp-spent" step="0.01" min="0" required placeholder="0,00">
-                                </div>
-                                <div class="form-group">
-                                    <label for="camp-leads">Leads Gerados (Contatos)</label>
-                                    <input type="number" id="camp-leads" min="0" required placeholder="Ex: 15">
-                                </div>
-                                <div class="form-group">
-                                    <label for="camp-sales">Vendas Fechadas</label>
-                                    <input type="number" id="camp-sales" min="0" required placeholder="Ex: 2">
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-block">Salvar Registro</button>
-                            </form>
-                        </div>
+                        <p class="stat-value num">R$ 978,99</p>
+                        <span class="stat-change neutral">Plano mensal fixo (10 vagas)</span>
                     </div>
 
-                    <!-- History Side -->
-                    <div class="dashboard-card glass">
-                        <div class="card-header">
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="layers"></i>
+                            <span>Vagas ocupadas</span>
+                        </div>
+                        <p class="stat-value num" id="rot-stat-vagas">0 / 10</p>
+                        <span class="stat-change neutral" id="rot-stat-vagas-sub">Vagas ativas no plano</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="activity"></i>
+                            <span>Custo acumulado total</span>
+                        </div>
+                        <p class="stat-value num" id="rot-stat-custo-total">R$ 0,00</p>
+                        <span class="stat-change neutral">Soma proporcional do tempo ativo</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-card glass">
+                    <div class="card-header">
+                        <div>
+                            <h2>Controle de Rotação e Vagas OLX</h2>
+                            <p class="card-subtitle">Monitore há quantos dias os veículos estão anunciados e ordene por prioridade de troca</p>
+                        </div>
+                        <i data-lucide="refresh-cw" class="text-muted"></i>
+                    </div>
+                    <div class="card-body overflow-x">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Veículo</th>
+                                    <th>Data de Anúncio</th>
+                                    <th>Dias na OLX</th>
+                                    <th>Leads Recebidos</th>
+                                    <th>Custo Acumulado</th>
+                                    <th>CPL (Vaga)</th>
+                                    <th>Status / Recomendação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="olxRotationTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Campaign Tracker -->
+            <section id="tab-campaign-tracker" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="dollar-sign"></i>
+                            <span>Gasto total</span>
+                        </div>
+                        <p class="stat-value num" id="camp-stat-gasto">R$ 0,00</p>
+                        <span class="stat-change neutral">Investimento total registrado</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="users"></i>
+                            <span>Total de leads</span>
+                        </div>
+                        <p class="stat-value num" id="camp-stat-leads">0 contatos</p>
+                        <span class="stat-change neutral">Volume total acumulado</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="check"></i>
+                            <span>Vendas realizadas</span>
+                        </div>
+                        <p class="stat-value num" id="camp-stat-vendas">0 vendas</p>
+                        <span class="stat-change neutral">Conversões finais fechadas</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i data-lucide="percent"></i>
+                            <span>Taxa de conversão</span>
+                        </div>
+                        <p class="stat-value num" id="camp-stat-conversao">0,00%</p>
+                        <span class="stat-change neutral">Leads convertidos em vendas</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid-1-2">
+                <!-- Full-Width Campaign History Table -->
+                <div class="dashboard-card glass">
+                    <div class="card-header">
+                        <div>
                             <h2>Histórico de Desempenho Real</h2>
+                            <p class="card-subtitle">Registros consolidados de investimento e leads do estoque</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-primary btn-sm" onclick="openCampaignModal()"><i data-lucide="plus"></i> Registrar Campanha</button>
                             <button class="btn btn-outline btn-sm" onclick="clearCampaignHistory()">Limpar Histórico</button>
                         </div>
-                        <div class="card-body overflow-x">
-                            <table class="table" id="campaignTable">
+                    </div>
+                    <div class="card-body overflow-x">
+                        <table class="table" id="campaignTable">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Canal</th>
+                                    <th>Gasto</th>
+                                    <th>Leads</th>
+                                    <th>CPL</th>
+                                    <th>Vendas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaignTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Meta Ads Real-Time -->
+            <section id="tab-meta-ads" class="tab-content">
+                <div class="dashboard-card glass">
+                    <div class="card-header">
+                        <div>
+                            <h2>Campanhas Meta Ads (Real-Time)</h2>
+                            <p class="card-subtitle">Campanhas sincronizadas em tempo real com o Facebook Ads Manager</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="btn-sync-meta-api" onclick="syncMetaAdsData()">
+                            <i data-lucide="refresh-cw"></i> Atualizar dados do Meta
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Error Box -->
+                        <div id="meta-api-error-box" class="alert-banner negative" style="display: none; margin-bottom: 1.5rem;">
+                            <i data-lucide="alert-triangle"></i>
+                            <span id="meta-api-error-msg">Erro ao conectar com a API do Meta.</span>
+                        </div>
+
+                        <!-- Skeleton Loader -->
+                        <div id="meta-loading-skeleton" class="skeleton-container" style="display: none;">
+                            <div class="skeleton-row" style="height: 40px; margin-bottom: 12px; background: rgba(255,255,255,0.03); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+                            <div class="skeleton-row" style="height: 50px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+                            <div class="skeleton-row" style="height: 50px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+                            <div class="skeleton-row" style="height: 50px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 4px; animation: pulse 1.5s infinite ease-in-out;"></div>
+                        </div>
+
+                        <!-- Content Table -->
+                        <div id="meta-table-wrapper" class="overflow-x">
+                            <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>Data</th>
-                                        <th>Canal</th>
-                                        <th>Gasto</th>
-                                        <th>Leads</th>
-                                        <th>CPL</th>
-                                        <th>Vendas</th>
+                                        <th>Nome da Campanha</th>
+                                        <th>Status</th>
+                                        <th>Objetivo</th>
+                                        <th>Orçamento Diário</th>
+                                        <th>Gasto (30d)</th>
+                                        <th>Impressões</th>
+                                        <th>Cliques</th>
+                                        <th>CTR</th>
                                     </tr>
                                 </thead>
-                                <tbody id="campaignTableBody">
+                                <tbody id="metaCampaignTableBody">
                                     <!-- Dynamic content -->
                                 </tbody>
                             </table>
@@ -413,6 +627,54 @@
             </section>
 
             <!-- Tab Content: Regional Insights -->
+            <!-- Tab Content: Ranking de Performance -->
+            <section id="tab-ranking" class="tab-content">
+                <div class="dashboard-card glass" style="margin-bottom: 1.5rem;">
+                    <div class="card-body" style="padding: 1.2rem 1.5rem;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                            <i data-lucide="info" style="color: var(--text-muted); flex-shrink: 0; margin-top: 2px; width: 18px; height: 18px;"></i>
+                            <div>
+                                <p style="color: var(--text-secondary); font-size: 0.82rem; line-height: 1.55; margin: 0;">
+                                    <strong style="color: var(--text-primary);">Como funciona a pontuação?</strong><br>
+                                    Cada carro ativo recebe uma nota de 0 a 100 comparando três fatores com os demais carros:
+                                    <strong>Custo por Lead</strong> (quanto menor, melhor),
+                                    <strong>Dias na OLX</strong> (quanto menos tempo parado, melhor) e
+                                    <strong>Aderência à Verba</strong> (quanto mais próximo do orçamento planejado, melhor).
+                                    Se algum dado não estiver disponível para um carro, ele é ignorado no cálculo sem prejudicar a nota.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card glass">
+                    <div class="card-header">
+                        <div>
+                            <h2>Ranking de Performance dos Carros Ativos</h2>
+                            <p class="card-subtitle">Classificação automática baseada em custo, tempo e aderência ao orçamento</p>
+                        </div>
+                        <i data-lucide="trophy" class="text-muted"></i>
+                    </div>
+                    <div class="card-body overflow-x">
+                        <table class="table" id="rankingTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">#</th>
+                                    <th>Modelo</th>
+                                    <th style="min-width: 200px;">Pontuação</th>
+                                    <th>Custo/Lead</th>
+                                    <th>Dias na OLX</th>
+                                    <th>Aderência à Verba</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <section id="tab-local-insights" class="tab-content">
                 <div class="insights-container">
                     <div class="insight-row">
@@ -503,9 +765,16 @@
                             </p>
                             <div class="input-with-currency mt-2" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                                 <input type="text" id="olx-feed-url" readonly value="https://api.automarketing.com.br/feed/olx/linhares-vitoria.xml" style="color: var(--text-secondary); font-size: 0.82rem; width: 80%;">
-                                <button class="btn btn-outline btn-sm" onclick="copyFeedURL()" style="padding: 0.65rem;"><i data-lucide="copy" style="width:16px; height:16px;"></i></button>
                             </div>
-                            <div class="tip-box mt-3">
+                            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                                <button class="btn btn-primary btn-sm" onclick="openXMLModal()" style="flex: 1; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.76rem;">
+                                    <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Visualizar XML
+                                </button>
+                                <button class="btn btn-outline btn-sm" onclick="downloadXMLFeed()" style="flex: 1; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.76rem;">
+                                    <i data-lucide="download" style="width: 14px; height: 14px;"></i> Baixar XML
+                                </button>
+                            </div>
+                            <div class="tip-box">
                                 <i data-lucide="info" style="color: var(--primary) !important;"></i>
                                 <p>Ao arrastar um carro para a coluna "Ativos no Plano OLX" no Kanban, este feed é atualizado automaticamente em tempo real.</p>
                             </div>
@@ -561,10 +830,26 @@
                             <option value="img_sedan">Sedã Elegante (Exemplo)</option>
                             <option value="img_hatch">Hatch Econômico (Exemplo)</option>
                             <option value="img_pickup">Pickup Robusta (Exemplo)</option>
+                            <option value="img_conversivel">Conversível/Esportivo</option>
+                            <option value="img_utilitario">Utilitário/Van</option>
                         </select>
                         <div class="img-preview-box mt-2">
-                            <img id="car-img-preview" src="" alt="Preview" style="display:none; max-height: 120px; border-radius: 8px;">
+                            <img id="car-img-preview" src="" alt="Preview" style="display:none; max-height: 120px; border-radius: 8px;" onerror="this.style.display='none';">
                         </div>
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="car-data-olx">Data de Entrada na OLX (Opcional)</label>
+                            <input type="date" id="car-data-olx" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                        </div>
+                        <div class="form-group">
+                            <label for="car-custo-olx">Custo do Anúncio (R$ - Opcional)</label>
+                            <input type="number" id="car-custo-olx" step="0.01" placeholder="Ex: 97,90" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="car-verba-mensal">Verba Mensal Planejada (R$)</label>
+                        <input type="number" id="car-verba-mensal" placeholder="Ex: 500" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
                     </div>
                     <div class="form-group flex-row align-center">
                         <input type="checkbox" id="car-hot" class="checkbox-input">
@@ -576,6 +861,71 @@
                         <button type="submit" class="btn btn-primary">Salvar Carro</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Campaign Modal -->
+    <div class="modal-overlay" id="campaignModal">
+        <div class="modal-card glass" style="max-width: 480px;">
+            <div class="modal-header">
+                <h2>Registrar Campanha</h2>
+                <button class="btn-close" onclick="closeCampaignModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="campaignForm" onsubmit="saveCampaign(event)">
+                    <div class="form-group">
+                        <label for="camp-date">Data de Início</label>
+                        <input type="date" id="camp-date" required style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label for="camp-channel">Canal do Anúncio</label>
+                        <select id="camp-channel" required style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                            <option value="Instagram Ads">Instagram Ads</option>
+                            <option value="Facebook Marketplace">Facebook Marketplace</option>
+                            <option value="OLX">OLX</option>
+                            <option value="Facebook Ads">Facebook Ads</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="camp-spent">Valor Gasto (R$)</label>
+                        <input type="number" id="camp-spent" step="0.01" min="0" required placeholder="0,00" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label for="camp-leads">Leads Gerados (Contatos)</label>
+                        <input type="number" id="camp-leads" min="0" required placeholder="Ex: 15" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label for="camp-sales">Vendas Fechadas</label>
+                        <input type="number" id="camp-sales" min="0" required placeholder="Ex: 2" style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; color: #fff; font-family: var(--font-body); font-size: 0.82rem; outline: none; width: 100%;">
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeCampaignModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Registro</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- XML Feed Viewer Modal -->
+    <div class="modal-overlay" id="xmlModal">
+        <div class="modal-card glass" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2>Feed XML Integrador OLX</h2>
+                <button class="btn-close" onclick="closeXMLModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <p class="field-info" style="margin-bottom: 0.2rem;">Este é o conteúdo real do feed XML gerado dinamicamente para os carros ativos no plano.</p>
+                <div style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; overflow: auto; max-height: 350px;">
+                    <pre id="xmlFeedContent" style="font-family: monospace; font-size: 0.78rem; color: #f43f5e; white-space: pre-wrap; word-break: break-all; margin: 0; text-align: left;"></pre>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeXMLModal()">Fechar</button>
+                    <button class="btn btn-primary" onclick="copyXMLContent()"><i data-lucide="copy"></i> Copiar Conteúdo</button>
+                </div>
             </div>
         </div>
     </div>
@@ -607,8 +957,5 @@
             </div>
         </div>
     </div>
-
-    <!-- Scripts -->
-    <script src="app.js"></script>
 </body>
 </html>
