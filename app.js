@@ -517,11 +517,18 @@ function handleCarFormSubmit(event) {
 
 // Delete Car from Inventory
 function deleteCar(index) {
-    if (confirm("Deseja realmente excluir este veículo do estoque?")) {
-        state.inventory.splice(index, 1);
-        saveInventoryToStorage();
-        renderAll();
-    }
+    const car = state.inventory[index];
+    const carName = car ? car.model : "este veículo";
+    openConfirmDeleteModal({
+        title: "Excluir veículo",
+        message: `Você está prestes a excluir permanentemente <strong>${carName}</strong> do estoque. Este registro será removido de forma definitiva, incluindo os dados sincronizados com a planilha do Google Sheets.`,
+        confirmLabel: "Excluir veículo",
+        onConfirm: () => {
+            state.inventory.splice(index, 1);
+            saveInventoryToStorage();
+            renderAll();
+        }
+    });
 }
 
 // CAMPAIGN LOGS TRACKER SYSTEM
@@ -567,11 +574,65 @@ function saveCampaign(event) {
 }
 
 function clearCampaignHistory() {
-    if (confirm("Deseja realmente apagar todo o histórico de campanhas?")) {
-        state.campaigns = [];
-        saveCampaignsToStorage();
-        renderAll();
+    openConfirmDeleteModal({
+        title: "Limpar histórico de campanhas",
+        message: "Você está prestes a apagar <strong>todo o histórico de desempenho de campanhas</strong>. Esta ação é irreversível e vai apagar permanentemente os dados reais registrados, incluindo os dados sincronizados com a planilha do Google Sheets.",
+        confirmLabel: "Apagar histórico",
+        onConfirm: () => {
+            state.campaigns = [];
+            saveCampaignsToStorage();
+            renderAll();
+        }
+    });
+}
+
+// ============================================================
+// Reinforced Confirmation Modal for permanent/destructive actions
+// Requires the user to type "CONFIRMAR" before enabling the action.
+// ============================================================
+const CONFIRM_DELETE_WORD = "CONFIRMAR";
+let pendingConfirmAction = null;
+
+function openConfirmDeleteModal({ title, message, confirmLabel, onConfirm }) {
+    pendingConfirmAction = typeof onConfirm === "function" ? onConfirm : null;
+
+    document.querySelector("#confirmDeleteTitle span").innerText = title || "Confirmar exclusão";
+    document.getElementById("confirmDeleteMessage").innerHTML = message || "Esta ação é irreversível.";
+
+    const confirmBtn = document.getElementById("confirmDeleteBtn");
+    confirmBtn.innerText = confirmLabel || "Excluir definitivamente";
+    confirmBtn.disabled = true;
+
+    const input = document.getElementById("confirmDeleteInput");
+    input.value = "";
+
+    document.getElementById("confirmDeleteModal").classList.add("active");
+
+    // Refresh icons that were injected into the modal
+    if (typeof lucide !== "undefined") lucide.createIcons();
+
+    setTimeout(() => input.focus(), 50);
+}
+
+function validateConfirmDeleteInput() {
+    const input = document.getElementById("confirmDeleteInput");
+    const confirmBtn = document.getElementById("confirmDeleteBtn");
+    confirmBtn.disabled = input.value.trim().toUpperCase() !== CONFIRM_DELETE_WORD;
+}
+
+function executeConfirmDelete() {
+    const input = document.getElementById("confirmDeleteInput");
+    if (input.value.trim().toUpperCase() !== CONFIRM_DELETE_WORD) return;
+
+    if (typeof pendingConfirmAction === "function") {
+        pendingConfirmAction();
     }
+    closeConfirmDeleteModal();
+}
+
+function closeConfirmDeleteModal() {
+    document.getElementById("confirmDeleteModal").classList.remove("active");
+    pendingConfirmAction = null;
 }
 
 // Integration Mock System
