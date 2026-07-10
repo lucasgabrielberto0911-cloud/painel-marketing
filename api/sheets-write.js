@@ -57,6 +57,16 @@ export default async function handler(req, res) {
             rowData.leads !== undefined ? parseInt(rowData.leads) : 0,
             rowData.sales !== undefined ? parseInt(rowData.sales) : 0
         ];
+    } else if (sheetName === 'Historico') {
+        rowValues = [
+            rowData.data || "",
+            rowData.total_carros_ativos !== undefined ? parseInt(rowData.total_carros_ativos) : 0,
+            rowData.total_carros_vendidos_mes !== undefined ? parseInt(rowData.total_carros_vendidos_mes) : 0,
+            rowData.verba_planejada_total !== undefined ? parseFloat(rowData.verba_planejada_total) : 0,
+            rowData.gasto_real_total_meta !== undefined ? parseFloat(rowData.gasto_real_total_meta) : 0,
+            rowData.leads_total_mes !== undefined ? parseInt(rowData.leads_total_mes) : 0,
+            rowData.vendas_total_mes !== undefined ? parseInt(rowData.vendas_total_mes) : 0
+        ];
     } else {
         rowValues = [
             rowData.modelo || "",

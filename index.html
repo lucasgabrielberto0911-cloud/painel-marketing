@@ -34,6 +34,10 @@
                     <i data-lucide="layout-dashboard"></i>
                     <span>Painel Geral</span>
                 </a>
+                <a href="#history" class="nav-item" id="nav-history" onclick="switchTab('history')">
+                    <i data-lucide="line-chart"></i>
+                    <span>Histórico & Tendências</span>
+                </a>
 
                 <div class="nav-group-divider"></div>
 
@@ -118,6 +122,11 @@
 
             <!-- Tab Content: Overview -->
             <section id="tab-overview" class="tab-content active">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                    <button class="btn btn-outline btn-sm" id="btn-save-snapshot" onclick="saveManualSnapshot()" style="gap: 0.3rem;">
+                        <i data-lucide="camera"></i> Salvar Snapshot de Hoje
+                    </button>
+                </div>
                 <!-- Stats Grid -->
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -258,6 +267,65 @@
                             <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--olx-color); border-radius: 2px;"></span> OLX</span>
                             <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--fb-color); border-radius: 2px;"></span> Facebook</span>
                             <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--ig-color); border-radius: 2px;"></span> Instagram</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: History Trends -->
+            <section id="tab-history" class="tab-content">
+                <!-- Empty State Message -->
+                <div id="history-empty-state" class="dashboard-card glass text-center" style="display: none; padding: 3rem 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📈</div>
+                    <h2>Nenhum Histórico Disponível</h2>
+                    <p class="card-subtitle mt-2" style="max-width: 450px; margin: 0 auto;">Salve snapshots periódicos na aba "Visão Geral" para gerar e visualizar gráficos de tendências do seu negócio ao longo do tempo.</p>
+                </div>
+
+                <!-- History Content -->
+                <div id="history-content" style="display: none;">
+                    <div class="dashboard-grid">
+                        <!-- Chart 1: Planned vs Real Spent -->
+                        <div class="dashboard-card glass">
+                            <div class="card-header">
+                                <div>
+                                    <h2>Orçamento: Planejado vs Gasto Real (Meta Ads)</h2>
+                                    <p class="card-subtitle">Evolução do investimento planejado em estoque vs o gasto real de mídia</p>
+                                </div>
+                                <i data-lucide="dollar-sign" class="text-muted"></i>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                                    <svg id="chartBudgetTrend" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                                        <!-- dynamic svg lines -->
+                                    </svg>
+                                </div>
+                                <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
+                                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--primary); border-radius: 2px;"></span> Planejado (Estoque)</span>
+                                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--fb-color); border-radius: 2px;"></span> Gasto Real (Meta)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Leads vs Sales -->
+                        <div class="dashboard-card glass">
+                            <div class="card-header">
+                                <div>
+                                    <h2>Performance: Contatos vs Vendas Fechadas</h2>
+                                    <p class="card-subtitle">Evolução da conversão de leads gerados em vendas fechadas</p>
+                                </div>
+                                <i data-lucide="trending-up" class="text-muted"></i>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                                    <svg id="chartLeadsSalesTrend" viewBox="0 0 800 200" width="100%" height="100%" preserveAspectRatio="none" style="overflow: visible;">
+                                        <!-- dynamic svg lines -->
+                                    </svg>
+                                </div>
+                                <div class="chart-legend" style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.8rem; font-weight: 500;">
+                                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: var(--success); border-radius: 2px;"></span> Vendas Realizadas</span>
+                                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 10px; height: 10px; background: #6366f1; border-radius: 2px;"></span> Contatos Gerados</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

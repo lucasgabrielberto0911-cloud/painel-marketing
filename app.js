@@ -2,7 +2,8 @@
 let state = {
     region: 'all',
     inventory: [],
-    campaigns: []
+    campaigns: [],
+    historico: []
 };
 
 // Global Store for real-time fetched Meta insights
@@ -110,6 +111,11 @@ document.addEventListener("DOMContentLoaded", () => {
         saveCampaignsToStorage();
     }
 
+    const storedHistorico = localStorage.getItem("automarketing_historico");
+    if (storedHistorico) {
+        state.historico = JSON.parse(storedHistorico);
+    }
+
     // Load integration states from localStorage if they exist
     const storedMetaToken = localStorage.getItem("suagaragem_meta_token");
     if (storedMetaToken) {
@@ -144,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.onclick = () => disconnectMockAPI('sheets');
         }
 
-        // Sincronismo inicial silencioso em background para ambas as abas (Estoque e Campanhas)
+        // Sincronismo inicial silencioso em background
         Promise.all([
             fetch('/api/sheets-read', {
                 method: 'POST',
@@ -155,12 +161,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Campanhas' })
-            }).then(res => res.json())
+            }).then(res => res.json()),
+            fetch('/api/sheets-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ spreadsheetUrl: storedSheetsUrl, sheetName: 'Historico' })
+            }).then(res => res.json()).catch(() => ({ success: false }))
         ])
-        .then(([resEstoque, resCampanhas]) => {
+        .then(([resEstoque, resCampanhas, resHistorico]) => {
             if (resEstoque.success && resCampanhas.success) {
                 processEstoqueData(resEstoque.data);
                 processCampanhaData(resCampanhas.data);
+                if (resHistorico && resHistorico.success) {
+                    processHistoricoData(resHistorico.data);
+                }
                 renderAll();
             }
         })
@@ -229,7 +243,7 @@ function processEstoqueData(rows) {
         if (row.length === 0 || !row[0]) continue;
 
         const car = {};
-        car.rowIndex = i + 1; // 1-based index to enable update actions
+        car.rowIndex = i + 1;
 
         headers.forEach((header, index) => {
             const val = row[index];
@@ -328,6 +342,53 @@ function processCampanhaData(rows) {
     }
 }
 
+// Parse data for 'Historico' sheet tab
+function processHistoricoData(rows) {
+    if (!rows || rows.length < 2) {
+        state.historico = [];
+        return;
+    }
+
+    const headers = rows[0].map(h => h.toString().toLowerCase().trim());
+    const newHistory = [];
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length === 0 || !row[0]) continue;
+
+        const snap = {};
+        snap.rowIndex = i + 1; // 1-based index
+
+        headers.forEach((header, index) => {
+            const val = row[index];
+            if (val === undefined || val === null) return;
+
+            if (header === 'data' || header === 'date') {
+                snap.data = val.toString().trim();
+            } else if (header === 'total_carros_ativos') {
+                snap.total_carros_ativos = parseInt(val) || 0;
+            } else if (header === 'total_carros_vendidos_mes') {
+                snap.total_carros_vendidos_mes = parseInt(val) || 0;
+            } else if (header === 'verba_planejada_total') {
+                snap.verba_planejada_total = parseFloat(val) || 0;
+            } else if (header === 'gasto_real_total_meta') {
+                snap.gasto_real_total_meta = parseFloat(val) || 0;
+            } else if (header === 'leads_total_mes') {
+                snap.leads_total_mes = parseInt(val) || 0;
+            } else if (header === 'vendas_total_mes') {
+                snap.vendas_total_mes = parseInt(val) || 0;
+            }
+        });
+
+        if (snap.data) {
+            newHistory.push(snap);
+        }
+    }
+
+    state.historico = newHistory;
+    localStorage.setItem("automarketing_historico", JSON.stringify(state.historico));
+}
+
 // Navigation / Tabs System
 function switchTab(tabId) {
     // Hide all sections
@@ -349,6 +410,7 @@ function switchTab(tabId) {
     // Update main header title contextually
     const titles = {
         overview: "Visão Geral do Marketing",
+        history: "Histórico & Tendências",
         simulator: "Verba Real por Carro",
         "olx-manager": "Meus Carros (Plano OLX)",
         "olx-rotation": "Painel de Rotação OLX",
@@ -368,6 +430,8 @@ function switchTab(tabId) {
         } else {
             renderVerbaRealPorCarro();
         }
+    } else if (tabId === 'history') {
+        renderHistoryTrends();
     }
 }
 
@@ -388,6 +452,7 @@ function renderAll() {
     renderCampaignTable();
     updateTips();
     renderVerbaRealPorCarro();
+    renderHistoryTrends();
 }
 
 // Update Top Stats Card
@@ -430,7 +495,6 @@ function renderStats() {
 
 // Render Overview Real Spend Distribution by Channel
 function renderDistributionBars() {
-    // Real spent by channel from campaign history
     const olxSpent = state.campaigns.filter(c => c.channel === 'OLX').reduce((sum, c) => sum + c.spent, 0);
     const fbSpent = state.campaigns.filter(c => c.channel === 'Facebook Marketplace').reduce((sum, c) => sum + c.spent, 0);
     const igSpent = state.campaigns.filter(c => c.channel === 'Instagram Ads').reduce((sum, c) => sum + c.spent, 0);
@@ -440,12 +504,10 @@ function renderDistributionBars() {
     const fbPct = total > 0 ? Math.round((fbSpent / total) * 100) : 0;
     const igPct = total > 0 ? Math.round((igSpent / total) * 100) : 0;
 
-    // Update Label texts
     document.getElementById("dist-val-olx").innerText = `R$ ${olxSpent.toFixed(2)} (${olxPct}%)`;
     document.getElementById("dist-val-fb").innerText = `R$ ${fbSpent.toFixed(2)} (${fbPct}%)`;
     document.getElementById("dist-val-ig").innerText = `R$ ${igSpent.toFixed(2)} (${igPct}%)`;
 
-    // Update Progress Bars
     document.getElementById("pb-olx").style.width = `${olxPct}%`;
     document.getElementById("pb-fb").style.width = `${fbPct}%`;
     document.getElementById("pb-ig").style.width = `${igPct}%`;
@@ -460,7 +522,6 @@ function renderOLXOverviewSlots() {
 
     document.getElementById("olx-slots-count").innerText = `${activeCars.length} de 10 Usados`;
 
-    // Render 10 slots
     for (let i = 0; i < 10; i++) {
         const slotEl = document.createElement("div");
         slotEl.className = "olx-slot";
@@ -491,16 +552,13 @@ function renderPerformanceChart() {
     if (!svg) return;
     svg.innerHTML = "";
 
-    // If campaigns is empty, show empty state
     if (state.campaigns.length === 0) {
         svg.innerHTML = `<text x="400" y="100" fill="var(--text-muted)" font-family="var(--font-body)" font-size="14" text-anchor="middle">Sem dados de campanhas registrados no momento.</text>`;
         return;
     }
 
-    // Sort campaigns by date ascending
     const campaigns = [...state.campaigns].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // Get unique dates
     const dates = [...new Set(campaigns.map(c => c.date))];
     if (dates.length < 2) {
         const dateObj = new Date(dates[0]);
@@ -508,7 +566,6 @@ function renderPerformanceChart() {
         dates.unshift(dateObj.toISOString().split('T')[0]);
     }
 
-    // Determine max leads to scale Y-axis
     let maxLeads = 10;
     campaigns.forEach(c => {
         if (c.leads > maxLeads) maxLeads = c.leads;
@@ -1265,7 +1322,6 @@ function saveCampaign(event) {
             showToast("Campanha registrada com sucesso no Google Sheets!");
             closeCampaignModal();
 
-            // Sincronizar dados das planilhas
             connectMockAPI('sheets');
         })
         .catch(err => {
@@ -1324,7 +1380,6 @@ function syncMetaAdsData(silent = false) {
             throw new Error(resIns.error || "Falha ao obter dados de insights do Meta Ads.");
         }
 
-        // Store insights globally for other cross reference panels
         window.latestMetaInsights = resIns.data || [];
 
         renderMetaAdsTable(resCamp.data, resIns.data);
@@ -1423,7 +1478,6 @@ function matchModelWithCampaign(carModel, campaignName) {
     const modelClean = carModel.toLowerCase();
     const campClean = campaignName.toLowerCase();
     
-    // Words to exclude when doing matching (common terms)
     const excludeWords = ['flex', 'automático', 'automatico', 'diesel', 'manual', 'turbo', 'd-4d', 'srx', 'ltz', 'plus', 'volcano', 'firefly', '1.0', '1.6', '1.8', '2.0', '2.8', '4x4', 'veículos', 'veiculo', 'carro'];
     
     const words = modelClean.split(/[\s,./-]+/)
@@ -1431,7 +1485,6 @@ function matchModelWithCampaign(carModel, campaignName) {
     
     if (words.length === 0) return false;
 
-    // Check if any keyword of the model appears in the Meta campaign name
     return words.some(word => campClean.includes(word));
 }
 
@@ -1456,7 +1509,6 @@ function renderVerbaRealPorCarro() {
         const planned = car.verba_mensal || 0;
         totalPlanned += planned;
 
-        // Sum matching Meta campaigns spend
         const matchingCampaigns = insightsList.filter(ins => matchModelWithCampaign(car.model, ins.campaign_name));
         const hasCampaign = matchingCampaigns.length > 0;
         
@@ -1491,7 +1543,6 @@ function renderVerbaRealPorCarro() {
         tbody.appendChild(tr);
     });
 
-    // Update global summaries on tab cards
     document.getElementById("verba-stat-planejado").innerText = totalPlanned.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     document.getElementById("verba-stat-gasto-real").innerText = totalRealGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     
@@ -1507,6 +1558,244 @@ function renderVerbaRealPorCarro() {
         saldoEl.style.color = "var(--primary-light)";
         saldoSub.innerHTML = `<span class="text-danger">Orçamento global estourado</span>`;
     }
+}
+
+// Save Snapshot of current marketing status manually
+window.saveManualSnapshot = function() {
+    const hoje = new Date().toISOString().split('T')[0];
+    
+    const activeCars = state.inventory.filter(car => car.status === 'active');
+    const totalCarrosAtivos = activeCars.length;
+    const totalCarrosVendidosMes = state.inventory.filter(car => car.status === 'sold').length;
+    const verbaPlanejadaTotal = activeCars.reduce((sum, c) => sum + (c.verba_mensal || 0), 0);
+    
+    const insightsList = window.latestMetaInsights || [];
+    let gastoRealTotalMeta = 0;
+    activeCars.forEach(car => {
+        const matches = insightsList.filter(ins => matchModelWithCampaign(car.model, ins.campaign_name));
+        if (matches.length > 0) {
+            gastoRealTotalMeta += matches.reduce((sum, ins) => sum + (parseFloat(ins.spend) || 0), 0);
+        }
+    });
+
+    const leadsTotalMes = state.campaigns.reduce((sum, c) => sum + c.leads, 0);
+    const vendasTotalMes = state.campaigns.reduce((sum, c) => sum + c.sales, 0);
+
+    const rowData = {
+        data: hoje,
+        total_carros_ativos: totalCarrosAtivos,
+        total_carros_vendidos_mes: totalCarrosVendidosMes,
+        verba_planejada_total: verbaPlanejadaTotal,
+        gasto_real_total_meta: gastoRealTotalMeta,
+        leads_total_mes: leadsTotalMes,
+        vendas_total_mes: vendasTotalMes
+    };
+
+    const sheetsUrl = localStorage.getItem("suagaragem_sheets_url");
+
+    if (!sheetsUrl) {
+        alert("A integração com o Google Sheets não está conectada. Conecte nas configurações para salvar snapshots.");
+        return;
+    }
+
+    const existingSnap = state.historico.find(snap => snap.data === hoje);
+    let action = "add";
+    let rowIndex = null;
+
+    if (existingSnap) {
+        if (!confirm(`Já existe um snapshot com a data de hoje (${hoje}). Deseja substituir os dados existentes?`)) {
+            return;
+        }
+        action = "update";
+        rowIndex = existingSnap.rowIndex;
+    } else {
+        if (!confirm("Confirmar a criação do snapshot de hoje do painel?")) {
+            return;
+        }
+    }
+
+    const btn = document.getElementById("btn-save-snapshot");
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Gravando...`;
+
+    fetch('/api/sheets-write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            spreadsheetUrl: sheetsUrl,
+            sheetName: "Historico",
+            action,
+            rowData,
+            rowIndex
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (!res.success) {
+            throw new Error(res.error || "Erro ao gravar snapshot.");
+        }
+        
+        showToast("Snapshot gravado com sucesso no Google Sheets!");
+        
+        return Promise.all([
+            fetch('/api/sheets-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ spreadsheetUrl: sheetsUrl, sheetName: 'Historico' })
+            }).then(r => r.json())
+        ]);
+    })
+    .then(([resHistory]) => {
+        if (resHistory.success) {
+            processHistoricoData(resHistory.data);
+        }
+        renderAll();
+    })
+    .catch(err => {
+        alert(`Falha ao salvar snapshot:\n${err.message}`);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+};
+
+// Render Historical line charts (SVG native crisp format)
+function renderHistoryTrends() {
+    const emptyState = document.getElementById("history-empty-state");
+    const contentArea = document.getElementById("history-content");
+    if (!emptyState || !contentArea) return;
+
+    if (!state.historico || state.historico.length < 2) {
+        emptyState.style.display = "block";
+        contentArea.style.display = "none";
+        return;
+    }
+
+    emptyState.style.display = "none";
+    contentArea.style.display = "block";
+
+    const sorted = [...state.historico].sort((a, b) => new Date(a.data) - new Date(b.data));
+
+    plotTrendChart("chartBudgetTrend", sorted, 'verba_planejada_total', 'gasto_real_total_meta', 'var(--primary)', 'var(--fb-color)');
+    plotTrendChart("chartLeadsSalesTrend", sorted, 'vendas_total_mes', 'leads_total_mes', 'var(--success)', '#6366f1');
+}
+
+function plotTrendChart(svgId, data, key1, key2, color1, color2) {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    svg.innerHTML = "";
+
+    const width = 800;
+    const height = 200;
+    const paddingLeft = 60;
+    const paddingRight = 30;
+    const paddingTop = 20;
+    const paddingBottom = 30;
+
+    const chartWidth = width - paddingLeft - paddingRight;
+    const chartHeight = height - paddingTop - paddingBottom;
+
+    let maxVal = 10;
+    data.forEach(d => {
+        if (d[key1] > maxVal) maxVal = d[key1];
+        if (d[key2] > maxVal) maxVal = d[key2];
+    });
+    maxVal = Math.ceil(maxVal / 10) * 10;
+
+    const getY = (val) => {
+        return paddingTop + chartHeight - (val / maxVal) * chartHeight;
+    };
+
+    const getX = (index) => {
+        return paddingLeft + (index / (data.length - 1)) * chartWidth;
+    };
+
+    // Draw Gridlines and Y labels
+    const gridCount = 4;
+    for (let i = 0; i <= gridCount; i++) {
+        const val = (maxVal / gridCount) * i;
+        const y = getY(val);
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", paddingLeft);
+        line.setAttribute("y1", y);
+        line.setAttribute("x2", width - paddingRight);
+        line.setAttribute("y2", y);
+        line.setAttribute("stroke", "rgba(255,255,255,0.03)");
+        line.setAttribute("stroke-dasharray", "4,4");
+        svg.appendChild(line);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", paddingLeft - 10);
+        label.setAttribute("y", y + 4);
+        label.setAttribute("fill", "var(--text-muted)");
+        label.setAttribute("font-size", "10");
+        label.setAttribute("font-family", "var(--font-body)");
+        label.setAttribute("text-anchor", "end");
+        label.textContent = val >= 1000 ? `${(val/1000).toFixed(1)}k` : Math.round(val);
+        svg.appendChild(label);
+    }
+
+    // Draw dates
+    data.forEach((d, idx) => {
+        const x = getX(idx);
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", x);
+        label.setAttribute("y", height - 10);
+        label.setAttribute("fill", "var(--text-muted)");
+        label.setAttribute("font-size", "9");
+        label.setAttribute("font-family", "var(--font-body)");
+        label.setAttribute("text-anchor", "middle");
+        
+        const dateObj = new Date(d.data + "T00:00:00");
+        label.textContent = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        svg.appendChild(label);
+    });
+
+    const drawLine = (key, color) => {
+        let pathD = "";
+        const points = data.map((d, idx) => ({ x: getX(idx), y: getY(d[key]), val: d[key] }));
+        
+        points.forEach((p, idx) => {
+            if (idx === 0) pathD += `M ${p.x} ${p.y}`;
+            else {
+                const prev = points[idx - 1];
+                const cp1x = prev.x + (p.x - prev.x) / 3;
+                const cp2x = prev.x + 2 * (p.x - prev.x) / 3;
+                pathD += ` C ${cp1x} ${prev.y}, ${cp2x} ${p.y}, ${p.x} ${p.y}`;
+            }
+        });
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", pathD);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", color);
+        path.setAttribute("stroke-width", "2.5");
+        path.setAttribute("stroke-linecap", "round");
+        svg.appendChild(path);
+
+        points.forEach(p => {
+            const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            dot.setAttribute("cx", p.x);
+            dot.setAttribute("cy", p.y);
+            dot.setAttribute("r", "3.5");
+            dot.setAttribute("fill", color);
+            dot.setAttribute("stroke", "var(--bg-card)");
+            dot.setAttribute("stroke-width", "1.5");
+            
+            const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+            title.textContent = p.val.toLocaleString('pt-BR');
+            dot.appendChild(title);
+
+            svg.appendChild(dot);
+        });
+    };
+
+    drawLine(key1, color1);
+    drawLine(key2, color2);
 }
 
 // Integration Real API System (Google Sheets Live Auth & Read)
@@ -1564,8 +1853,14 @@ function connectMockAPI(type) {
             body: JSON.stringify({ spreadsheetUrl: url, sheetName: 'Campanhas' })
         }).then(res => res.json());
 
-        Promise.all([fetchEstoque, fetchCampanhas])
-            .then(([resEstoque, resCampanhas]) => {
+        const fetchHistorico = fetch('/api/sheets-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ spreadsheetUrl: url, sheetName: 'Historico' })
+        }).then(res => res.json()).catch(() => ({ success: false }));
+
+        Promise.all([fetchEstoque, fetchCampanhas, fetchHistorico])
+            .then(([resEstoque, resCampanhas, resHistorico]) => {
                 if (!resEstoque.success) {
                     throw new Error(`Aba 'Estoque': ${resEstoque.error}`);
                 }
@@ -1575,6 +1870,9 @@ function connectMockAPI(type) {
 
                 processEstoqueData(resEstoque.data);
                 processCampanhaData(resCampanhas.data);
+                if (resHistorico && resHistorico.success) {
+                    processHistoricoData(resHistorico.data);
+                }
 
                 badge.innerText = "Sincronizado";
                 badge.style.background = "rgba(16, 185, 129, 0.1)";
