@@ -350,10 +350,10 @@ function switchTab(tabId) {
     const titles = {
         overview: "Visão Geral do Marketing",
         simulator: "Verba Real por Carro",
-        "olx-manager": "Gerenciador do Plano OLX",
+        "olx-manager": "Meus Carros (Plano OLX)",
         "olx-rotation": "Painel de Rotação OLX",
-        "meta-ads": "Campanhas Meta Ads (Real-Time)",
-        "campaign-tracker": "Rastreamento de Performance Real",
+        "meta-ads": "Campanhas (Meta Ads Live)",
+        "campaign-tracker": "Campanhas (Planilha Sheets)",
         integrations: "Conexões de API & Planilhas",
         "local-insights": "Insights de Mercado Regional (ES)"
     };

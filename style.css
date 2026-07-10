@@ -149,6 +149,22 @@ body {
     flex-grow: 1;
 }
 
+.nav-group-header {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 0.75rem 0.75rem 0.25rem 0.75rem;
+    opacity: 0.6;
+}
+
+.nav-group-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.03);
+    margin: 0.35rem 0.75rem;
+}
+
 .nav-item {
     display: flex;
     align-items: center;
