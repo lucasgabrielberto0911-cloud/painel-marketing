@@ -7,7 +7,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
     <!-- Lucide Icons -->
@@ -134,55 +134,39 @@
                 <!-- Stats Grid -->
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper blue">
+                        <div class="stat-label">
                             <i data-lucide="dollar-sign"></i>
+                            <span>Orçamento planejado</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Orçamento Planejado</h3>
-                            <p class="stat-value" id="stat-budget">R$ 0,00</p>
-                            <span class="stat-change neutral" id="stat-budget-sub">
-                                <i data-lucide="info"></i> Verbas dos carros ativos
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="stat-budget">R$ 0,00</p>
+                        <span class="stat-change neutral" id="stat-budget-sub">Verbas dos carros ativos</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper green">
+                        <div class="stat-label">
                             <i data-lucide="users"></i>
+                            <span>Leads estimados</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Leads Estimados</h3>
-                            <p class="stat-value" id="stat-leads">124</p>
-                            <span class="stat-change positive">
-                                <i data-lucide="trending-up"></i> Estimado por mês
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="stat-leads">124</p>
+                        <span class="stat-change neutral">Estimado por mês</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper purple">
+                        <div class="stat-label">
                             <i data-lucide="target"></i>
+                            <span>Custo médio / lead</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Custo Médio / Lead</h3>
-                            <p class="stat-value" id="stat-cpl">R$ 16,13</p>
-                            <span class="stat-change neutral">
-                                <i data-lucide="activity"></i> Média da região
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="stat-cpl">R$ 16,13</p>
+                        <span class="stat-change neutral">Média da região</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper orange">
+                        <div class="stat-label">
                             <i data-lucide="percent"></i>
+                            <span>Preenchimento OLX</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Preenchimento OLX</h3>
-                            <p class="stat-value" id="stat-olx-fill">0/10</p>
-                            <span class="stat-change" id="stat-olx-badge">
-                                Carros no plano ativo
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="stat-olx-fill">0/10</p>
+                        <span class="stat-change neutral" id="stat-olx-badge">Carros no plano ativo</span>
                     </div>
                 </div>
 
@@ -340,42 +324,30 @@
                 <!-- Summary Stats -->
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper orange">
+                        <div class="stat-label">
                             <i data-lucide="dollar-sign"></i>
+                            <span>Verba planejada total</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Verba Planejada Total</h3>
-                            <p class="stat-value" id="verba-stat-planejado">R$ 0,00</p>
-                            <span class="stat-change">
-                                Soma das verbas mensais ativas
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="verba-stat-planejado">R$ 0,00</p>
+                        <span class="stat-change neutral">Soma das verbas mensais ativas</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper purple">
+                        <div class="stat-label">
                             <i data-lucide="facebook"></i>
+                            <span>Gasto real total</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Gasto Real Total</h3>
-                            <p class="stat-value" id="verba-stat-gasto-real">R$ 0,00</p>
-                            <span class="stat-change">
-                                Investimento real do Meta Ads
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="verba-stat-gasto-real">R$ 0,00</p>
+                        <span class="stat-change neutral">Investimento real do Meta Ads</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper green">
+                        <div class="stat-label">
                             <i data-lucide="percent"></i>
+                            <span>Saldo acumulado</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Saldo Acumulado</h3>
-                            <p class="stat-value" id="verba-stat-saldo">R$ 0,00</p>
-                            <span class="stat-change" id="verba-stat-saldo-sub">
-                                Diferença (Planejado - Real)
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="verba-stat-saldo">R$ 0,00</p>
+                        <span class="stat-change neutral" id="verba-stat-saldo-sub">Diferença (planejado - real)</span>
                     </div>
                 </div>
 
@@ -473,42 +445,30 @@
             <section id="tab-olx-rotation" class="tab-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper orange">
+                        <div class="stat-label">
                             <i data-lucide="dollar-sign"></i>
+                            <span>Custo do plano OLX</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Custo do Plano OLX</h3>
-                            <p class="stat-value">R$ 978,99</p>
-                            <span class="stat-change">
-                                Plano mensal fixo (10 vagas)
-                            </span>
-                        </div>
+                        <p class="stat-value num">R$ 978,99</p>
+                        <span class="stat-change neutral">Plano mensal fixo (10 vagas)</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper blue">
+                        <div class="stat-label">
                             <i data-lucide="layers"></i>
+                            <span>Vagas ocupadas</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Vagas Ocupadas</h3>
-                            <p class="stat-value" id="rot-stat-vagas">0 / 10</p>
-                            <span class="stat-change" id="rot-stat-vagas-sub">
-                                Vagas ativas no plano
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="rot-stat-vagas">0 / 10</p>
+                        <span class="stat-change neutral" id="rot-stat-vagas-sub">Vagas ativas no plano</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper green">
+                        <div class="stat-label">
                             <i data-lucide="activity"></i>
+                            <span>Custo acumulado total</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Custo Acumulado Total</h3>
-                            <p class="stat-value" id="rot-stat-custo-total">R$ 0,00</p>
-                            <span class="stat-change">
-                                Soma proporcional do tempo ativo
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="rot-stat-custo-total">R$ 0,00</p>
+                        <span class="stat-change neutral">Soma proporcional do tempo ativo</span>
                     </div>
                 </div>
 
@@ -546,55 +506,39 @@
             <section id="tab-campaign-tracker" class="tab-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper orange">
+                        <div class="stat-label">
                             <i data-lucide="dollar-sign"></i>
+                            <span>Gasto total</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Gasto Total</h3>
-                            <p class="stat-value" id="camp-stat-gasto">R$ 0,00</p>
-                            <span class="stat-change">
-                                Investimento total registrado
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="camp-stat-gasto">R$ 0,00</p>
+                        <span class="stat-change neutral">Investimento total registrado</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper green">
+                        <div class="stat-label">
                             <i data-lucide="users"></i>
+                            <span>Total de leads</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Total de Leads</h3>
-                            <p class="stat-value" id="camp-stat-leads">0 contatos</p>
-                            <span class="stat-change">
-                                Volume total acumulado
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="camp-stat-leads">0 contatos</p>
+                        <span class="stat-change neutral">Volume total acumulado</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper blue">
+                        <div class="stat-label">
                             <i data-lucide="check"></i>
+                            <span>Vendas realizadas</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Vendas Realizadas</h3>
-                            <p class="stat-value" id="camp-stat-vendas">0 vendas</p>
-                            <span class="stat-change">
-                                Conversões finais fechadas
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="camp-stat-vendas">0 vendas</p>
+                        <span class="stat-change neutral">Conversões finais fechadas</span>
                     </div>
-                    
+
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper purple">
+                        <div class="stat-label">
                             <i data-lucide="percent"></i>
+                            <span>Taxa de conversão</span>
                         </div>
-                        <div class="stat-data">
-                            <h3>Taxa de Conversão</h3>
-                            <p class="stat-value" id="camp-stat-conversao">0,00%</p>
-                            <span class="stat-change">
-                                Leads convertidos em vendas
-                            </span>
-                        </div>
+                        <p class="stat-value num" id="camp-stat-conversao">0,00%</p>
+                        <span class="stat-change neutral">Leads convertidos em vendas</span>
                     </div>
                 </div>
 
@@ -986,5 +930,32 @@
         </div>
     </div>
 
+    <!-- Confirm Destructive Action Modal (reinforced) -->
+    <div class="modal-overlay" id="confirmDeleteModal">
+        <div class="modal-card danger-modal">
+            <div class="modal-header">
+                <h2 id="confirmDeleteTitle">
+                    <i data-lucide="alert-triangle"></i>
+                    <span>Confirmar exclusão</span>
+                </h2>
+                <button class="btn-close" onclick="closeConfirmDeleteModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-delete-message" id="confirmDeleteMessage">Esta ação é irreversível.</p>
+                <div class="confirm-delete-warning">
+                    <i data-lucide="shield-alert"></i>
+                    <span>Ação irreversível. Os dados removidos não poderão ser recuperados.</span>
+                </div>
+                <div class="form-group">
+                    <label for="confirmDeleteInput">Digite <strong>CONFIRMAR</strong> para habilitar a exclusão</label>
+                    <input type="text" id="confirmDeleteInput" autocomplete="off" spellcheck="false" placeholder="CONFIRMAR" oninput="validateConfirmDeleteInput()">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeConfirmDeleteModal()">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="executeConfirmDelete()" disabled>Excluir definitivamente</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
